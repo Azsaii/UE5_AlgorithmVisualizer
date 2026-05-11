@@ -39,9 +39,13 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Grid")
     void AdjustCamera(int32 Width, int32 Height);
 
-    // 핵심 함수 - 위젯에서 호출
+    // 위젯에서 그리드 생성 시 호출
     UFUNCTION(BlueprintCallable, Category = "Grid")
     void RegenerateGrid(int32 NewWidth, int32 NewHeight);
+
+    // 컨트롤러에서 그리드 초기화용으로 사용
+    UFUNCTION(BlueprintCallable, Category = "Grid")
+    void ResetGrid();
 
     // 인덱스로 타일 접근
     UFUNCTION(BlueprintPure, Category = "Grid")

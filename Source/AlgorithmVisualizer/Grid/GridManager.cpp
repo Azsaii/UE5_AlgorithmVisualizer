@@ -15,8 +15,9 @@ void AGridManager::AdjustCamera(int32 Width, int32 Height)
     if (!PC) return;
 
     float MaxDimension = FMath::Max(Width, Height) * TileSize;
-    float TargetZ = MaxDimension * 1.2f;
-    FVector FixedLocation = FVector(0.f, 0.f, TargetZ);
+    float TargetZ = MaxDimension * 1.1f;
+    float XOffset = 50.f * TargetZ / 1000.f;
+    FVector FixedLocation = FVector(XOffset, 0.f, TargetZ);
 
     // Pawn 위치 직접 설정
     AAlgorithmPawn* Pawn = Cast<AAlgorithmPawn>(PC->GetPawn());
@@ -44,6 +45,11 @@ void AGridManager::RegenerateGrid(int32 NewWidth, int32 NewHeight)
 
     // 카메라 z위치 조정
     AdjustCamera(NewWidth, NewHeight);
+}
+
+void AGridManager::ResetGrid()
+{
+    RegenerateGrid(CurrentWidth, CurrentHeight);
 }
 
 void AGridManager::SpawnTiles(int32 Width, int32 Height)

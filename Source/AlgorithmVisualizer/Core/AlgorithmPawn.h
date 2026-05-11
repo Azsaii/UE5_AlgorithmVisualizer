@@ -38,11 +38,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     UInputAction* IA_Zoom;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    UInputAction* IA_ToggleCamera;
+    UPROPERTY(EditDefaultsOnly, Category = "Movement")
+    float ZScaleReference = 1000.f; // 이 높이일 때 MoveSpeed 그대로 적용
 
     UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float MoveSpeed = 1000.f;
+    float MoveSpeed = 100.f;
 
     // 줌 설정
     UPROPERTY(EditDefaultsOnly, Category = "Movement")
@@ -52,12 +52,11 @@ protected:
     float ZoomMin = 500.f;
 
     UPROPERTY(EditDefaultsOnly, Category = "Movement")
-    float ZoomMax = 5000.f;
+    float ZoomMax = 10000.f;
 
 private:
     FVector2D MoveInput = FVector2D::ZeroVector;
 
-    void RequestToggleCamera();
-    void Move(const FInputActionValue& Value);
-    void Zoom(const FInputActionValue& Value);
+    void Input_Move(const FInputActionValue& Value);
+    void Input_Zoom(const FInputActionValue& Value);
 };

@@ -8,8 +8,9 @@
 
 class UEditableTextBox;
 class UButton;
-class UTextBlock;
 class AGridManager;
+class UImage;
+class UTextBlock;
 
 UCLASS()
 class ALGORITHMVISUALIZER_API UControlPanelWidget : public UUserWidget
@@ -21,16 +22,25 @@ public:
     UPROPERTY(meta = (BindWidget)) UEditableTextBox* TextBox_Width;
     UPROPERTY(meta = (BindWidget)) UEditableTextBox* TextBox_Height;
     UPROPERTY(meta = (BindWidget)) UButton* Button_Apply;
+
+    UPROPERTY(meta = (BindWidget)) UImage* StatusBackground;
+
     UPROPERTY(meta = (BindWidget)) UTextBlock* Text_Status;
 
     // GridManager 참조 (BeginPlay에서 주입)
     UPROPERTY(BlueprintReadWrite, Category = "Grid")
-    AGridManager* GridManager;
+    AGridManager* GridManager = nullptr;
 
+    void UpdateStatusText(const FString& Message);
 protected:
     virtual void NativeConstruct() override;
 
 private:
     UFUNCTION() void OnApplyClicked();
-    void UpdateStatusText(int32 W, int32 H);
+
+    UPROPERTY(EditDefaultsOnly, Category = "Grid")
+    int32 MinGridAmount = 2;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Grid")
+    int32 MaxGridAmount = 50;
 };

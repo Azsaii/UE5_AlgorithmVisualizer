@@ -40,9 +40,8 @@ void AAlgorithmPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
     UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
     if (!EIC) return;
 
-    EIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AAlgorithmPawn::Move);
-    EIC->BindAction(IA_Zoom, ETriggerEvent::Triggered, this, &AAlgorithmPawn::Zoom);
-    EIC->BindAction(IA_ToggleCamera, ETriggerEvent::Started, this, &AAlgorithmPawn::RequestToggleCamera);
+    EIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AAlgorithmPawn::Input_Move);
+    EIC->BindAction(IA_Zoom, ETriggerEvent::Triggered, this, &AAlgorithmPawn::Input_Zoom);
 }
 
 void AAlgorithmPawn::Tick(float DeltaTime)
@@ -51,30 +50,20 @@ void AAlgorithmPawn::Tick(float DeltaTime)
 
     if (MoveInput.IsNearlyZero()) return;
 
-    FVector Delta = FVector(MoveInput.X, MoveInput.Y, 0.f) * MoveSpeed * DeltaTime;
+    float ZScale = GetActorLocation().Z / ZScaleReference;
+    FVector Delta = FVector(MoveInput.Y, MoveInput.X, 0.f)
+        * MoveSpeed * ZScale * DeltaTime;
+
     AddActorWorldOffset(Delta);
     MoveInput = FVector2D::ZeroVector;
 }
 
-void AAlgorithmPawn::RequestToggleCamera()
-{
-    UE_LOG(LogTemp, Warning, TEXT("RequestToggleCamera called"));
-
-    AAlgorithmPlayerController* PC = Cast<AAlgorithmPlayerController>(GetController());
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Error, TEXT("PC cast failed"));
-        return;
-    }
-    PC->ToggleCameraMode();
-}
-
-void AAlgorithmPawn::Move(const FInputActionValue& Value)
+void AAlgorithmPawn::Input_Move(const FInputActionValue& Value)
 {
     MoveInput = Value.Get<FVector2D>();
 }
 
-void AAlgorithmPawn::Zoom(const FInputActionValue& Value)
+void AAlgorithmPawn::Input_Zoom(const FInputActionValue& Value)
 {
     float ScrollValue = Value.Get<float>();
 
