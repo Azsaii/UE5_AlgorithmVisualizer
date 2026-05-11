@@ -32,7 +32,7 @@ void UControlPanelWidget::OnApplyClicked()
     TextBox_Width->SetText(FText::FromString(FString::FromInt(W)));
     TextBox_Height->SetText(FText::FromString(FString::FromInt(H)));
 
-    GridManager->RegenerateGrid(W, H);
+    GridManager->GenerateGrid(W, H);
 
     FString Msg = FString::Printf(TEXT("Grid generated: %d x %d  (%d tiles)"), W, H, W * H);
     UpdateStatusText(Msg);

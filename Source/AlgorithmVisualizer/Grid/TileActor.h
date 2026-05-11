@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "TileActor.generated.h"
 
-UENUM(BlueprintType)
+UENUM()
 enum class ETileState : uint8
 {
 	Unvisited,
@@ -27,6 +27,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComp;
 
+	ETileState CurrentState = ETileState::Unvisited;
+
 	// 그리드 상 좌표
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	int32 GridX = 0;
@@ -34,21 +36,15 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	int32 GridY = 0;
 
-	UFUNCTION(BlueprintPure, Category = "Tile")
-	ETileState GetState() const { return CurrentState; }
-
 	void SetState(ETileState NewState);
 
 	// 호버 상태 변경
 	void SetHovered(bool bHovered);
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
 
 private:
-
-	ETileState CurrentState = ETileState::Unvisited;
 
 	// 타일 상태 변경
 	FLinearColor StateToColor(ETileState State);

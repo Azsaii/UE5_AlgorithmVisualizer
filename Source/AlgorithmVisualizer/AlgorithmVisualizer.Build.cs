@@ -16,6 +16,7 @@ public class AlgorithmVisualizer : ModuleRules
         PublicIncludePaths.AddRange(new string[]
         {
             System.IO.Path.Combine(ModuleDirectory, "Core"),
+            System.IO.Path.Combine(ModuleDirectory, "Graph"),
             System.IO.Path.Combine(ModuleDirectory, "Grid"),
             System.IO.Path.Combine(ModuleDirectory, "UI"),
             System.IO.Path.Combine(ModuleDirectory, "Algorithms"),

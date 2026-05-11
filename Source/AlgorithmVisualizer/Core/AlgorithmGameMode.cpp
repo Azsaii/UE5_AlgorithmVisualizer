@@ -33,6 +33,6 @@ void AAlgorithmGameMode::BeginPlay()
     GetWorldTimerManager().SetTimer(TimerHandle, [this]()
         {
             if (GridManager)
-                GridManager->RegenerateGrid(10, 10);
+                GridManager->GenerateGrid(10, 10);
         }, 0.1f, false);
 }

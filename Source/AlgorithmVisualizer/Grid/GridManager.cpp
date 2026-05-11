@@ -30,14 +30,19 @@ void AGridManager::AdjustCamera(int32 Width, int32 Height)
         AlgorithmPC->SetFixedCameraLocation(FixedLocation);
 }
 
-void AGridManager::RegenerateGrid(int32 NewWidth, int32 NewHeight)
+void AGridManager::GenerateGrid(int32 NewWidth, int32 NewHeight)
 {
     // 유효성 검사
     if (NewWidth < 2 || NewWidth  > 100) return;
     if (NewHeight < 2 || NewHeight > 100) return;
     if (!TileClass) { UE_LOG(LogTemp, Error, TEXT("TileClass is not set!")); return; }
 
-    ClearGrid();
+    // 기존 타일 제거
+    for (ATileActor* Tile : GridTiles)
+        if (IsValid(Tile)) Tile->Destroy();
+
+    GridTiles.Empty();
+
     CurrentWidth = NewWidth;
     CurrentHeight = NewHeight;
     SpawnTiles(NewWidth, NewHeight);
@@ -49,7 +54,7 @@ void AGridManager::RegenerateGrid(int32 NewWidth, int32 NewHeight)
 
 void AGridManager::ResetGrid()
 {
-    RegenerateGrid(CurrentWidth, CurrentHeight);
+    GenerateGrid(CurrentWidth, CurrentHeight);
 }
 
 void AGridManager::SpawnTiles(int32 Width, int32 Height)
@@ -78,16 +83,6 @@ void AGridManager::SpawnTiles(int32 Width, int32 Height)
             }
         }
     }
-}
-
-void AGridManager::ClearGrid()
-{
-    for (ATileActor* Tile : GridTiles)
-        if (IsValid(Tile)) Tile->Destroy();
-
-    GridTiles.Empty();
-    CurrentWidth = 0;
-    CurrentHeight = 0;
 }
 
 ATileActor* AGridManager::GetTile(int32 X, int32 Y) const

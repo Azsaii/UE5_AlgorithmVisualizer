@@ -21,22 +21,6 @@ void ATileActor::PostInitializeComponents()
 
     MeshComp->SetMaterial(0, TileMaterial);
     DynamicMaterial = MeshComp->CreateAndSetMaterialInstanceDynamic(0);
-
-    if (!DynamicMaterial) {
-        UE_LOG(LogTemp, Error, TEXT("DynamicMaterial creation failed"));
-    }
-    else
-        UE_LOG(LogTemp, Warning, TEXT("DynamicMaterial creation success"));
-}
-
-void ATileActor::BeginPlay()
-{
-    Super::BeginPlay();
-
-    UE_LOG(LogTemp, Warning, TEXT("BeginPlay - DynamicMaterial: %s"),
-        DynamicMaterial ? TEXT("Valid") : TEXT("Null"));
-
-    SetState(ETileState::Unvisited);
 }
 
 void ATileActor::SetState(ETileState NewState)

@@ -138,7 +138,7 @@ void AAlgorithmPlayerController::Input_ClickStarted()
 
         CurrentEditMode = EEditMode::SetObstacle;
 
-        const ETileState& state = ClickedTile->GetState();
+        ETileState& state = ClickedTile->CurrentState;
 
         // 장애물 지정
         if (state == ETileState::Unvisited) {
@@ -174,7 +174,7 @@ void AAlgorithmPlayerController::Input_ClickTriggered()
         ? ETileState::Unvisited
         : ETileState::Obstacle;
 
-    if (HoveredTile->GetState() != TargetState)
+    if (HoveredTile->CurrentState != TargetState)
         HoveredTile->SetState(TargetState);
 }
 

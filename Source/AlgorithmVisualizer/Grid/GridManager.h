@@ -41,7 +41,7 @@ public:
 
     // 위젯에서 그리드 생성 시 호출
     UFUNCTION(BlueprintCallable, Category = "Grid")
-    void RegenerateGrid(int32 NewWidth, int32 NewHeight);
+    void GenerateGrid(int32 NewWidth, int32 NewHeight);
 
     // 컨트롤러에서 그리드 초기화용으로 사용
     UFUNCTION(BlueprintCallable, Category = "Grid")
@@ -50,9 +50,6 @@ public:
     // 인덱스로 타일 접근
     UFUNCTION(BlueprintPure, Category = "Grid")
     ATileActor* GetTile(int32 X, int32 Y) const;
-
-    UFUNCTION(BlueprintCallable, Category = "Grid")
-    void ClearGrid();
 
 private:
     void SpawnTiles(int32 Width, int32 Height);
