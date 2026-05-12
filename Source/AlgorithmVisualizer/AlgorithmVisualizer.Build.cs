@@ -19,10 +19,10 @@ public class AlgorithmVisualizer : ModuleRules
             System.IO.Path.Combine(ModuleDirectory, "Graph"),
             System.IO.Path.Combine(ModuleDirectory, "Grid"),
             System.IO.Path.Combine(ModuleDirectory, "UI"),
+            System.IO.Path.Combine(ModuleDirectory, "Base"),
             System.IO.Path.Combine(ModuleDirectory, "Algorithms"),
-            System.IO.Path.Combine(ModuleDirectory, "Algorithms/Base"),
             System.IO.Path.Combine(ModuleDirectory, "Algorithms/Pathfinding"),
-            System.IO.Path.Combine(ModuleDirectory, "Algorithms/MST")
+            System.IO.Path.Combine(ModuleDirectory, "Algorithms/Graph")
         });
 
         // Uncomment if you are using Slate UI

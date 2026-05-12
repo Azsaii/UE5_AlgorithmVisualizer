@@ -37,24 +37,25 @@ void AGridManager::GenerateGrid(int32 NewWidth, int32 NewHeight)
     if (NewHeight < 2 || NewHeight > 100) return;
     if (!TileClass) { UE_LOG(LogTemp, Error, TEXT("TileClass is not set!")); return; }
 
+    CurrentWidth = NewWidth;
+    CurrentHeight = NewHeight;
+
+    ReGenerateGrid();
+}
+
+void AGridManager::ReGenerateGrid()
+{
     // 기존 타일 제거
     for (ATileActor* Tile : GridTiles)
         if (IsValid(Tile)) Tile->Destroy();
 
     GridTiles.Empty();
 
-    CurrentWidth = NewWidth;
-    CurrentHeight = NewHeight;
-    SpawnTiles(NewWidth, NewHeight);
-    CenterGridToOrigin(NewWidth, NewHeight);
+    SpawnTiles(CurrentWidth, CurrentHeight);
+    CenterGridToOrigin(CurrentWidth, CurrentHeight);
 
     // 카메라 z위치 조정
-    AdjustCamera(NewWidth, NewHeight);
-}
-
-void AGridManager::ResetGrid()
-{
-    GenerateGrid(CurrentWidth, CurrentHeight);
+    AdjustCamera(CurrentWidth, CurrentHeight);
 }
 
 void AGridManager::SpawnTiles(int32 Width, int32 Height)
@@ -79,6 +80,7 @@ void AGridManager::SpawnTiles(int32 Width, int32 Height)
                 Tile->GridY = Y;
                 // 이름 설정 (디버깅용)
                 Tile->SetActorLabel(FString::Printf(TEXT("Tile_%d_%d"), X, Y));
+                Tile->SetState(ETileState::Unvisited);
                 GridTiles.Add(Tile);
             }
         }

@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "AlgorithmTypes.h"
+#include "BaseAlgorithm.h"
 #include "AlgorithmGameMode.generated.h"
 
 class AGridManager;
+class GraphManager;
 class UControlPanelWidget;
 
 UCLASS()
@@ -21,10 +24,13 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UControlPanelWidget> ControlPanelClass;
 
+    void SwitchAlgorithm(EAlgorithmType Type);
 protected:
     virtual void BeginPlay() override;
 
 private:
+
     AGridManager* GridManager;
     UControlPanelWidget* ControlPanel;
+    TUniquePtr<FBaseAlgorithm> CurrentAlgorithm;
 };

@@ -1,12 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GridManager.generated.h"
 
-class TileActor;
+class ATileActor;
 
 UCLASS()
 class ALGORITHMVISUALIZER_API AGridManager : public AActor
@@ -25,6 +23,10 @@ public:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Grid")
     float TileSize = 110.f; // 큐브 100 + 간격 10
 
+    // 스폰된 타일 전체 (GridX + GridY * Width = Index)
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
+    TArray<ATileActor*> GridTiles;
+
     // 현재 그리드 정보
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
     int32 CurrentWidth = 0;
@@ -32,26 +34,18 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
     int32 CurrentHeight = 0;
 
-    // 스폰된 타일 전체 (GridX + GridY * Width = Index)
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
-    TArray<ATileActor*> GridTiles;
-
-    UFUNCTION(BlueprintCallable, Category = "Grid")
-    void AdjustCamera(int32 Width, int32 Height);
-
-    // 위젯에서 그리드 생성 시 호출
-    UFUNCTION(BlueprintCallable, Category = "Grid")
+    // 그리드 생성 시 호출
     void GenerateGrid(int32 NewWidth, int32 NewHeight);
 
-    // 컨트롤러에서 그리드 초기화용으로 사용
-    UFUNCTION(BlueprintCallable, Category = "Grid")
-    void ResetGrid();
+    // 그리드 재생성 시 호출
+    void ReGenerateGrid();
 
     // 인덱스로 타일 접근
-    UFUNCTION(BlueprintPure, Category = "Grid")
     ATileActor* GetTile(int32 X, int32 Y) const;
 
 private:
+    void AdjustCamera(int32 Width, int32 Height);
+
     void SpawnTiles(int32 Width, int32 Height);
     void CenterGridToOrigin(int32 Width, int32 Height);
 };

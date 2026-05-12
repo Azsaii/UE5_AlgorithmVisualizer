@@ -220,7 +220,7 @@ void AAlgorithmPlayerController::Input_SwapStartEnd()
 
 void AAlgorithmPlayerController::Input_ClearScreen() 
 {
-    GridManager->ResetGrid();
+    GridManager->ReGenerateGrid();
     if (ControlPanel) ControlPanel->UpdateStatusText(TEXT("Grid cleared"));
 }
 
