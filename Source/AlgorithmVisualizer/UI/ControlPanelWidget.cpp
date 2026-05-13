@@ -6,6 +6,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Fonts/FontMeasure.h"
 #include "GridManager.h"
+#include "AlgorithmPlayerController.h"
 
 void UControlPanelWidget::NativeConstruct()
 {
@@ -31,6 +32,9 @@ void UControlPanelWidget::OnApplyClicked()
     // 범위를 벗어난 값 입력 시 자동 보정해서 다시 표시
     TextBox_Width->SetText(FText::FromString(FString::FromInt(W)));
     TextBox_Height->SetText(FText::FromString(FString::FromInt(H)));
+
+    // 화면 초기화
+    ALPC->Input_ClearPath();
 
     GridManager->GenerateGrid(W, H);
 

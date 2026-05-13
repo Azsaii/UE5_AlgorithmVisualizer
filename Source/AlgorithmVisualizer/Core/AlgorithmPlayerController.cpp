@@ -5,6 +5,15 @@
 #include "TileActor.h"
 #include "ControlPanelWidget.h"
 #include "GridManager.h"
+#include "GraphManager.h"
+#include "BFSAlgorithm.h"
+#include "DFSAlgorithm.h"
+#include "AStarAlgorithm.h"
+#include "JPSAlgorithm.h"
+#include "DijkstraAlgorithm.h"
+#include "BellmanFordAlgorithm.h"
+#include "KruskalAlgorithm.h"
+#include "PrimAlgorithm.h"
 
 AAlgorithmPlayerController::AAlgorithmPlayerController()
 {
@@ -21,6 +30,13 @@ void AAlgorithmPlayerController::BeginPlay()
     InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
     InputMode.SetHideCursorDuringCapture(false);
     SetInputMode(InputMode);
+
+    FTimerHandle TimerHandle;
+    GetWorldTimerManager().SetTimer(TimerHandle, [this]()
+        {
+            CurrentAlgorithm = MakeUnique<FBFSAlgorithm>(GridManager);
+        }, 0.1f, false);
+    
 }
 
 void AAlgorithmPlayerController::Tick(float DeltaTime)
@@ -71,8 +87,8 @@ void AAlgorithmPlayerController::SetupInputComponent()
     EIC->BindAction(IA_SwapStartEnd, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_SwapStartEnd);
     EIC->BindAction(IA_ClearScreen, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_ClearScreen);
     EIC->BindAction(IA_ClearPath, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_ClearPath);
-    EIC->BindAction(IA_ProgressOnce, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_ProgressOnce);
-    EIC->BindAction(IA_ProgressAll, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_ProgressAll);
+    EIC->BindAction(IA_StepOnce, ETriggerEvent::Triggered, this, &AAlgorithmPlayerController::Input_StepOnce);
+    EIC->BindAction(IA_StepAll, ETriggerEvent::Started, this, &AAlgorithmPlayerController::Input_StepAll);
 }
 
 ATileActor* AAlgorithmPlayerController::GetTileUnderCursor()
@@ -84,57 +100,57 @@ ATileActor* AAlgorithmPlayerController::GetTileUnderCursor()
 
 void AAlgorithmPlayerController::Input_SetStart()
 {
-    if (ControlPanel) ControlPanel->UpdateStatusText(TEXT("Click to set start point"));
+    ControlPanel->UpdateStatusText(TEXT("Click to set start point"));
     CurrentEditMode = EEditMode::SetStart;
 }
 
 void AAlgorithmPlayerController::Input_SetEnd()
 {
-    if (ControlPanel) ControlPanel->UpdateStatusText(TEXT("Click to set end point"));
+    ControlPanel->UpdateStatusText(TEXT("Click to set end point"));
     CurrentEditMode = EEditMode::SetEnd;
 }
 
 void AAlgorithmPlayerController::Input_ClickStarted()
 {
-    UE_LOG(LogTemp, Error, TEXT("Click start!!"));
-
     ATileActor* ClickedTile = GetTileUnderCursor();
     if (!ClickedTile) return;
 
     FString Msg;
-
     bIsMousePressed = true;
+
+    // 기존 경로탐색 제거
+    Input_ClearPath();
 
     switch (CurrentEditMode) {
     case EEditMode::SetStart: {
-        if (StartTile) StartTile->SetState(ETileState::Unvisited);
-        StartTile = ClickedTile;
-        StartTile->SetState(ETileState::Start);
+        if (GridManager->StartTile) GridManager->StartTile->SetState(ETileState::Unvisited);
+        GridManager->StartTile = ClickedTile;
+        GridManager->StartTile->SetState(ETileState::Start);
 
         Msg = FString::Printf(TEXT("Start point set at (%d, %d)"),
             ClickedTile->GridX, ClickedTile->GridY);
 
         // 시작지점으로 선택한 지점이 원래 목표점이었으면 기존 목표점은 제거
-        if (ClickedTile == EndTile) EndTile = nullptr;
+        if (ClickedTile == GridManager->EndTile) GridManager->EndTile = nullptr;
 
         break;
     }
     case EEditMode::SetEnd: {
-        if (EndTile) EndTile->SetState(ETileState::Unvisited);
-        EndTile = ClickedTile;
-        EndTile->SetState(ETileState::Goal);
+        if (GridManager->EndTile) GridManager->EndTile->SetState(ETileState::Unvisited);
+        GridManager->EndTile = ClickedTile;
+        GridManager->EndTile->SetState(ETileState::Goal);
 
         Msg = FString::Printf(TEXT("End point set at (%d, %d)"),
             ClickedTile->GridX, ClickedTile->GridY);
 
         // 목표지점으로 선택한 지점이 원래 시작점이었으면 기존 시작점은 제거
-        if (ClickedTile == StartTile) StartTile = nullptr;
+        if (ClickedTile == GridManager->StartTile) GridManager->StartTile = nullptr;
 
         break;
     }
     case EEditMode::None: {
         // 시작/종료 지점은 장애물로 덮어쓰지 않음
-        if (ClickedTile == StartTile || ClickedTile == EndTile) return;
+        if (ClickedTile == GridManager->StartTile || ClickedTile == GridManager->EndTile) return;
 
         CurrentEditMode = EEditMode::SetObstacle;
 
@@ -156,7 +172,7 @@ void AAlgorithmPlayerController::Input_ClickStarted()
     }
     }
 
-    if (ControlPanel) ControlPanel->UpdateStatusText(Msg);
+    ControlPanel->UpdateStatusText(Msg);
 }
 
 void AAlgorithmPlayerController::Input_ClickTriggered()
@@ -168,7 +184,7 @@ void AAlgorithmPlayerController::Input_ClickTriggered()
     if (!HoveredTile) return;
 
     // 시작/종료 지점은 장애물로 덮어쓰지 않음
-    if (HoveredTile == StartTile || HoveredTile == EndTile) return;
+    if (HoveredTile == GridManager->StartTile || HoveredTile == GridManager->EndTile) return;
 
     ETileState TargetState = bRemovingObstacle
         ? ETileState::Unvisited
@@ -197,44 +213,87 @@ void AAlgorithmPlayerController::Input_ClickCompleted()
 
 void AAlgorithmPlayerController::Input_SwapStartEnd() 
 {
+    Input_ClearPath();
+
     FString Msg;
 
-    // 스왑 전 조건 체크
-    if (!StartTile || !EndTile)
-    {
-        Msg = TEXT("Cannot swap: start or end point not set");
-    }
-    else
-    {
-        ATileActor* tmp = StartTile;
-        StartTile = EndTile;
-        EndTile = tmp;
+    bool bSuccess = GridManager->SwapStartEnd();
 
-        StartTile->SetState(ETileState::Start);
-        EndTile->SetState(ETileState::Goal);
-        Msg = TEXT("Start and end points swapped");
-    }
+    if (!bSuccess) Msg = TEXT("Cannot swap: start or end point not set");
+    else Msg = TEXT("Start and end points swapped");
 
-    if (ControlPanel) ControlPanel->UpdateStatusText(Msg);
+    ControlPanel->UpdateStatusText(Msg);
 }
 
 void AAlgorithmPlayerController::Input_ClearScreen() 
 {
+    Input_ClearPath();
+
     GridManager->ReGenerateGrid();
-    if (ControlPanel) ControlPanel->UpdateStatusText(TEXT("Grid cleared"));
+    GraphManager->ReGenerateGraph();
+    ControlPanel->UpdateStatusText(TEXT("Screen cleared"));
 }
 
 void AAlgorithmPlayerController::Input_ClearPath() 
 {
-    if (ControlPanel) ControlPanel->UpdateStatusText(TEXT("Path cleared"));
+    CurrentAlgorithm->ClearPath();
+    GridManager->ClearDrawPath();
+    ControlPanel->UpdateStatusText(TEXT("Path cleared"));
 }
 
-void AAlgorithmPlayerController::Input_ProgressOnce() 
+void AAlgorithmPlayerController::Input_StepOnce() 
 {
-    if (ControlPanel) ControlPanel->UpdateStatusText(FString::Printf(TEXT("Searching... (step %d)"), 1));
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+
+    if (CurrentTime - LastCallTime >= FuncCallCoolTime) {
+        LastCallTime = CurrentTime;
+        CurrentAlgorithm->StepOnce();
+    }
 }
 
-void AAlgorithmPlayerController::Input_ProgressAll() 
+void AAlgorithmPlayerController::Input_StepAll() 
 {
-    if (ControlPanel) ControlPanel->UpdateStatusText(FString::Printf(TEXT("Path found! (step %d)"), 1));
+    CurrentAlgorithm->StepAll();
+}
+
+void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
+{
+    Input_ClearPath();
+
+    switch (Type)
+    {
+    case EAlgorithmType::BFS: {
+        CurrentAlgorithm = MakeUnique<FBFSAlgorithm>(GridManager);
+        break;
+    }
+    case EAlgorithmType::DFS: {
+
+        break;
+    }
+    case EAlgorithmType::ASTAR: {
+
+        break;
+    }
+    case EAlgorithmType::JPS: {
+
+        break;
+    }
+
+    case EAlgorithmType::DIJKSTRA: {
+
+        break;
+    }
+    case EAlgorithmType::BELLMAN_FORD: {
+
+        break;
+    }
+    case EAlgorithmType::PRIM: {
+
+        break;
+    }
+    case EAlgorithmType::KRUSKAL: {
+
+        break;
+    }
+    }
 }

@@ -11,6 +11,7 @@ class UButton;
 class AGridManager;
 class UImage;
 class UTextBlock;
+class AAlgorithmPlayerController;
 
 UCLASS()
 class ALGORITHMVISUALIZER_API UControlPanelWidget : public UUserWidget
@@ -30,6 +31,8 @@ public:
     // GridManager 참조 (BeginPlay에서 주입)
     UPROPERTY(BlueprintReadWrite, Category = "Grid")
     AGridManager* GridManager = nullptr;
+
+    AAlgorithmPlayerController* ALPC = nullptr;
 
     void UpdateStatusText(const FString& Message);
 protected:

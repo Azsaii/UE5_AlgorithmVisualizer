@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ControlPanelWidget.h"
 #include "GraphManager.generated.h"
 
 class ANodeActor;
@@ -17,4 +18,12 @@ class ALGORITHMVISUALIZER_API AGraphManager : public AActor
 public:	
 	
 	AGraphManager();
+
+	// 그래프 생성 시 호출
+	void GenerateGraph(int32 NodeAmount);
+
+	// 그래프 재생성 시 호출
+	void ReGenerateGraph();
+
+	UControlPanelWidget* ControlPanel = nullptr;
 };

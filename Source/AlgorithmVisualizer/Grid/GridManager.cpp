@@ -3,10 +3,24 @@
 #include "Engine/World.h"
 #include "AlgorithmPawn.h"
 #include "AlgorithmPlayerController.h"
+#include "Components/SplineComponent.h"
 
 AGridManager::AGridManager()
 {
     PrimaryActorTick.bCanEverTick = false;
+
+    if (!RootComponent)
+    {
+        USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+        RootComponent = Root;
+    }
+
+    PathSpline = CreateDefaultSubobject<USplineComponent>(TEXT("PathSpline"));
+    PathSpline->SetupAttachment(RootComponent);
+
+    // 스플라인 시각화 설정
+    PathSpline->SetDrawDebug(true);
+    PathSpline->bShouldVisualizeScale = false;
 }
 
 void AGridManager::AdjustCamera(int32 Width, int32 Height)
@@ -45,6 +59,9 @@ void AGridManager::GenerateGrid(int32 NewWidth, int32 NewHeight)
 
 void AGridManager::ReGenerateGrid()
 {
+    StartTile = nullptr;
+    EndTile = nullptr;
+
     // 기존 타일 제거
     for (ATileActor* Tile : GridTiles)
         if (IsValid(Tile)) Tile->Destroy();
@@ -56,6 +73,17 @@ void AGridManager::ReGenerateGrid()
 
     // 카메라 z위치 조정
     AdjustCamera(CurrentWidth, CurrentHeight);
+}
+
+void AGridManager::ResetTileState()
+{
+    for (ATileActor* Tile : GridTiles) {
+        if(Tile->CurrentState != ETileState::Obstacle)
+            Tile->SetState(ETileState::Unvisited);
+    }
+
+    if(StartTile) StartTile->SetState(ETileState::Start);
+    if(EndTile) EndTile->SetState(ETileState::Goal);
 }
 
 void AGridManager::SpawnTiles(int32 Width, int32 Height)
@@ -107,4 +135,63 @@ void AGridManager::CenterGridToOrigin(int32 Width, int32 Height)
     for (ATileActor* Tile : GridTiles)
         if (IsValid(Tile))
             Tile->SetActorLocation(Tile->GetActorLocation() + Offset);
+}
+
+bool AGridManager::SwapStartEnd()
+{
+    // 스왑 전 조건 체크
+    if (!StartTile || !EndTile) return false;
+    
+    ATileActor* tmp = StartTile;
+    StartTile = EndTile;
+    EndTile = tmp;
+
+    StartTile->SetState(ETileState::Start);
+    EndTile->SetState(ETileState::Goal);
+    return true;
+}
+
+void AGridManager::DrawPath(ATileActor* CurrentTile)
+{
+    FlushPersistentDebugLines(GetWorld());
+    PathSpline->ClearSplinePoints();
+
+    ATileActor* Tile = CurrentTile;
+    while (Tile != nullptr)
+    {
+        FVector Point = Tile->GetActorLocation();
+        Point.Z += 10.f;
+        PathSpline->AddSplinePoint(Point, ESplineCoordinateSpace::World);
+        Tile = Tile->PathParent;
+    }
+
+    PathSpline->UpdateSpline();
+
+    // 스플라인 대신 DrawDebugLine 으로 직접 그리기
+    for (int32 i = 0; i < PathSpline->GetNumberOfSplinePoints() - 1; i++)
+    {
+        FVector Start = PathSpline->GetLocationAtSplinePoint(
+            i, ESplineCoordinateSpace::World);
+        FVector End = PathSpline->GetLocationAtSplinePoint(
+            i + 1, ESplineCoordinateSpace::World);
+
+        DrawDebugLine(
+            GetWorld(),
+            Start,
+            End,
+            CurrentTile->Color_Path.ToFColor(true),
+            true,    // 지속 여부
+            -1.f,    
+            0,
+            20.f       // 선 두께
+        );
+    }
+}
+
+void AGridManager::ClearDrawPath()
+{
+    // 스플라인 포인트 전부 제거
+    FlushPersistentDebugLines(GetWorld());
+    PathSpline->ClearSplinePoints();
+    PathSpline->UpdateSpline();
 }

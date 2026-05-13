@@ -23,23 +23,14 @@ void ATileActor::PostInitializeComponents()
     DynamicMaterial = MeshComp->CreateAndSetMaterialInstanceDynamic(0);
 }
 
-void ATileActor::SetState(ETileState NewState)
+void ATileActor::SetState(ETileState NewState, bool bColorChange)
 {
     CurrentState = NewState;
 
-    if (!DynamicMaterial)
-    {
-        UE_LOG(LogTemp, Error, TEXT("SetState - DynamicMaterial is null"));
-        return;
+    if (bColorChange == true) {
+        FLinearColor Color = StateToColor(NewState);
+        DynamicMaterial->SetVectorParameterValue(TEXT("BaseColor"), Color);
     }
-
-    FLinearColor Color = StateToColor(NewState);
-    UE_LOG(LogTemp, Warning, TEXT("SetState - Color: R=%f G=%f B=%f"),
-        Color.R, Color.G, Color.B);
-
-    DynamicMaterial->SetVectorParameterValue(TEXT("BaseColor"), Color);
-
-    UE_LOG(LogTemp, Warning, TEXT("%s"), *GetNameSafe(MeshComp->GetMaterial(0)));
 }
 
 FLinearColor ATileActor::StateToColor(ETileState State)
@@ -50,6 +41,9 @@ FLinearColor ATileActor::StateToColor(ETileState State)
     case ETileState::Obstacle:  return Color_Obstacle;
     case ETileState::Start:     return Color_Start;
     case ETileState::Goal:      return Color_Goal;
+    case ETileState::Open:      return Color_Open;
+    case ETileState::Closed:    return Color_Closed;
+    case ETileState::Path:      return Color_Path;
     default:                    return FLinearColor::White;
     }
 }

@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "AlgorithmTypes.h"
+#include "BaseAlgorithm.h"
 #include "AlgorithmPlayerController.generated.h"
 
 class UInputMappingContext;
@@ -11,6 +13,7 @@ class UInputAction;
 class ATileActor;
 class UControlPanelWidget;
 class AGridManager;
+class AGraphManager;
 
 UENUM()
 enum class EEditMode : uint8
@@ -36,6 +39,12 @@ public:
     UControlPanelWidget* ControlPanel;
 
     AGridManager* GridManager = nullptr;
+    AGraphManager* GraphManager = nullptr;
+
+    void SwitchAlgorithm(EAlgorithmType Type);
+
+    // ui에서 호출됨
+    void Input_ClearPath();
 
 protected:
     virtual void BeginPlay() override;
@@ -61,10 +70,10 @@ protected:
     UInputAction* IA_ClearPath;
 
     UPROPERTY(EditDefaultsOnly, Category = "Input")
-    UInputAction* IA_ProgressOnce;
+    UInputAction* IA_StepOnce;
 
     UPROPERTY(EditDefaultsOnly, Category = "Input")
-    UInputAction* IA_ProgressAll;
+    UInputAction* IA_StepAll;
 
 private:
     // 타일 생성 시 저장되는 고정 카메라 위치
@@ -78,8 +87,9 @@ private:
     // 현재 수정모드
     EEditMode CurrentEditMode = EEditMode::None;
 
-    ATileActor* StartTile = nullptr;
-    ATileActor* EndTile = nullptr;
+    // 함수 트리거 쿨타임 기능에 사용
+    float LastCallTime = 0.f;
+    float FuncCallCoolTime = 0.2f;
 
     bool bRemovingObstacle = false;
     bool bIsMousePressed = false;
@@ -92,9 +102,10 @@ private:
 
     void Input_SwapStartEnd();
     void Input_ClearScreen();
-    void Input_ClearPath();
-    void Input_ProgressOnce();
-    void Input_ProgressAll();
+    void Input_StepOnce();
+    void Input_StepAll();
 
     ATileActor* GetTileUnderCursor();
+
+    TUniquePtr<FBaseAlgorithm> CurrentAlgorithm;
 };

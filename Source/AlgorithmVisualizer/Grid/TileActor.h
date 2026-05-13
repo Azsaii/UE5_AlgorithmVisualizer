@@ -12,7 +12,11 @@ enum class ETileState : uint8
 	Unvisited,
 	Obstacle,
 	Start,
-	Goal
+	Goal,
+
+	Open,    // 탐색 후보
+	Closed,  // 탐색 완료
+	Path     // 최종 경로
 };
 
 UCLASS()
@@ -36,10 +40,34 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	int32 GridY = 0;
 
-	void SetState(ETileState NewState);
+	void SetState(ETileState NewState, bool bColorChange = true);
 
 	// 호버 상태 변경
 	void SetHovered(bool bHovered);
+
+	ATileActor* PathParent = nullptr;
+
+	// 상태별 색상
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Unvisited;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Obstacle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Start;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Goal;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Open;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Closed;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Path;
 
 protected:
 	virtual void PostInitializeComponents() override;
@@ -54,18 +82,4 @@ private:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
-
-	// 상태별 색상
-	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
-	FLinearColor Color_Unvisited = FLinearColor(0.2f, 0.2f, 0.2f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
-	FLinearColor Color_Obstacle = FLinearColor(0.05f, 0.05f, 0.05f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
-	FLinearColor Color_Start = FLinearColor(0.f, 1.f, 0.f);
-
-	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
-	FLinearColor Color_Goal = FLinearColor(1.f, 0.f, 0.f);
-
 };
