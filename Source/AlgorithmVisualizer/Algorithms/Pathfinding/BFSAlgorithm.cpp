@@ -24,9 +24,9 @@ bool FBFSAlgorithm::CheckState()
 	return true;
 }
 
-bool FBFSAlgorithm::StepOnce()
+void FBFSAlgorithm::StepOnce()
 {
-	if (CheckState() == false) return false;
+	if (CheckState() == false) return;
 	else if (OpenQueue.IsEmpty()) {
 		OpenQueue.Enqueue(GridManager->StartTile);
 	}
@@ -34,29 +34,30 @@ bool FBFSAlgorithm::StepOnce()
 	int32 width = GridManager->CurrentWidth;
 	int32 height = GridManager->CurrentHeight;
 
-	ATileActor* Tile = nullptr;
-	bool bSuccess = OpenQueue.Dequeue(Tile);
+	// 이전 경로 제거
+	if (CurentTile) GridManager->DrawPath(CurentTile, false);
+
+	bool bSuccess = OpenQueue.Dequeue(CurentTile);
 	if (bSuccess == true) {
-		GridManager->DrawPath(Tile);
+		GridManager->DrawPath(CurentTile, true);
 
-		if (Tile != GridManager->StartTile && Tile != GridManager->EndTile) {
-			Tile->SetState(ETileState::Closed);
+		if (CurentTile != GridManager->StartTile && CurentTile != GridManager->EndTile) {
+			CurentTile->SetStateAndColor(ETileState::Closed);
 		}
-		else Tile->SetState(ETileState::Closed, false);
+		else CurentTile->CurrentState = ETileState::Closed;
 
-		if (Tile == GridManager->EndTile) {
+		if (CurentTile == GridManager->EndTile) {
 			bFindEnd = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Path found!"));
-			return false;
+			return;
 		}
 
-		int32 cx = Tile->GridX;
-		int32 cy = Tile->GridY;
+		int32 cx = CurentTile->GridX;
+		int32 cy = CurentTile->GridY;
 
 		FString Msg = FString::Printf(TEXT("Open point (%d, %d)"), cx, cy);
 		GridManager->ControlPanel->UpdateStatusText(Msg);
 
-		bool check = true;
 		for (int8 i = 0; i < 4; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
@@ -65,14 +66,13 @@ bool FBFSAlgorithm::StepOnce()
 				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
-					OpenTile->PathParent = Tile;
+					OpenTile->PathParent = CurentTile;
 					OpenQueue.Enqueue(OpenTile);
-					check = false;
 
 					if (OpenTile != GridManager->EndTile) {
-						OpenTile->SetState(ETileState::Open);
+						OpenTile->SetStateAndColor(ETileState::Open);
 					}
-					else OpenTile->SetState(ETileState::Open, false);
+					else OpenTile->CurrentState = ETileState::Open;
 				}
 			}
 		}
@@ -80,20 +80,65 @@ bool FBFSAlgorithm::StepOnce()
 		if (OpenQueue.IsEmpty()) {
 			bUnreachable = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
-			return false;
+			return;
 		}
 	}
-
-	return true;
 }
 
 void FBFSAlgorithm::StepAll()
 {
-	while (StepOnce());
+	if (CheckState() == false) return;
+	else if (OpenQueue.IsEmpty()) {
+		OpenQueue.Enqueue(GridManager->StartTile);
+	}
+
+	int32 width = GridManager->CurrentWidth;
+	int32 height = GridManager->CurrentHeight;
+
+	while (!OpenQueue.IsEmpty()) {
+		OpenQueue.Dequeue(CurentTile);
+		CurentTile->CurrentState = ETileState::Closed;
+
+		if (CurentTile == GridManager->EndTile) {
+			bFindEnd = true;
+			GridManager->ControlPanel->UpdateStatusText(TEXT("Path found!"));
+			GridManager->DrawPath(GridManager->EndTile, true);
+			break;
+		}
+
+		int32 cx = CurentTile->GridX;
+		int32 cy = CurentTile->GridY;
+
+		for (int8 i = 0; i < 4; i++) {
+			int32 nx = cx + dx[i];
+			int32 ny = cy + dy[i];
+			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
+			else {
+				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+				if (OpenTile->CurrentState == ETileState::Unvisited ||
+					OpenTile->CurrentState == ETileState::Goal) {
+					OpenTile->PathParent = CurentTile;
+					OpenQueue.Enqueue(OpenTile);
+					OpenTile->CurrentState = ETileState::Open;
+				}
+			}
+		}
+
+		if (OpenQueue.IsEmpty()) {
+			bUnreachable = true;
+			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
+			return;
+		}
+	}
+
+	GridManager->UpdateAllTileColor();
 }
 
 void FBFSAlgorithm::ClearPath()
 {
+	// 이전 경로 제거
+	if (CurentTile) GridManager->DrawPath(CurentTile, false);
+
 	OpenQueue.Empty();
 	GridManager->ResetTileState();
 	GridManager->ControlPanel->UpdateStatusText(TEXT("Path cleared!"));

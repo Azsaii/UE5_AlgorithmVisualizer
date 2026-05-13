@@ -34,7 +34,7 @@ void AAlgorithmPlayerController::BeginPlay()
     FTimerHandle TimerHandle;
     GetWorldTimerManager().SetTimer(TimerHandle, [this]()
         {
-            CurrentAlgorithm = MakeUnique<FBFSAlgorithm>(GridManager);
+            CurrentAlgorithm = MakeUnique<FDFSAlgorithm>(GridManager);
         }, 0.1f, false);
     
 }
@@ -123,9 +123,9 @@ void AAlgorithmPlayerController::Input_ClickStarted()
 
     switch (CurrentEditMode) {
     case EEditMode::SetStart: {
-        if (GridManager->StartTile) GridManager->StartTile->SetState(ETileState::Unvisited);
+        if (GridManager->StartTile) GridManager->StartTile->SetStateAndColor(ETileState::Unvisited);
         GridManager->StartTile = ClickedTile;
-        GridManager->StartTile->SetState(ETileState::Start);
+        GridManager->StartTile->SetStateAndColor(ETileState::Start);
 
         Msg = FString::Printf(TEXT("Start point set at (%d, %d)"),
             ClickedTile->GridX, ClickedTile->GridY);
@@ -136,9 +136,9 @@ void AAlgorithmPlayerController::Input_ClickStarted()
         break;
     }
     case EEditMode::SetEnd: {
-        if (GridManager->EndTile) GridManager->EndTile->SetState(ETileState::Unvisited);
+        if (GridManager->EndTile) GridManager->EndTile->SetStateAndColor(ETileState::Unvisited);
         GridManager->EndTile = ClickedTile;
-        GridManager->EndTile->SetState(ETileState::Goal);
+        GridManager->EndTile->SetStateAndColor(ETileState::Goal);
 
         Msg = FString::Printf(TEXT("End point set at (%d, %d)"),
             ClickedTile->GridX, ClickedTile->GridY);
@@ -159,13 +159,13 @@ void AAlgorithmPlayerController::Input_ClickStarted()
         // 장애물 지정
         if (state == ETileState::Unvisited) {
             bRemovingObstacle = false;
-            ClickedTile->SetState(ETileState::Obstacle);
+            ClickedTile->SetStateAndColor(ETileState::Obstacle);
             Msg = TEXT("Placing obstacles...");
         }
         // 장애물 해제
         else if (state == ETileState::Obstacle) {
             bRemovingObstacle = true;
-            ClickedTile->SetState(ETileState::Unvisited);
+            ClickedTile->SetStateAndColor(ETileState::Unvisited);
             Msg = TEXT("Removing obstacles...");
         }
         break;
@@ -191,7 +191,7 @@ void AAlgorithmPlayerController::Input_ClickTriggered()
         : ETileState::Obstacle;
 
     if (HoveredTile->CurrentState != TargetState)
-        HoveredTile->SetState(TargetState);
+        HoveredTile->SetStateAndColor(TargetState);
 }
 
 void AAlgorithmPlayerController::Input_ClickCompleted()
@@ -237,7 +237,6 @@ void AAlgorithmPlayerController::Input_ClearScreen()
 void AAlgorithmPlayerController::Input_ClearPath() 
 {
     CurrentAlgorithm->ClearPath();
-    GridManager->ClearDrawPath();
     ControlPanel->UpdateStatusText(TEXT("Path cleared"));
 }
 

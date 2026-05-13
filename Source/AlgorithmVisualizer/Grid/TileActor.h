@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "TileActor.generated.h"
 
+class UWidgetComponent;
+
 UENUM()
 enum class ETileState : uint8
 {
@@ -25,11 +27,16 @@ class ALGORITHMVISUALIZER_API ATileActor : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ATileActor();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MeshComp;
+
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* LabelRoot;
+
+	UPROPERTY(VisibleAnywhere)
+	UWidgetComponent* LabelWidget;
 
 	ETileState CurrentState = ETileState::Unvisited;
 
@@ -40,10 +47,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	int32 GridY = 0;
 
-	void SetState(ETileState NewState, bool bColorChange = true);
+	void SetStateAndColor(ETileState NewState);
 
 	// 호버 상태 변경
 	void SetHovered(bool bHovered);
+
+	// 경로 상에 있을 때 머티리얼 밝기 값 변경
+	void SetPath(bool bPath);
 
 	ATileActor* PathParent = nullptr;
 
@@ -69,9 +79,21 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
 	FLinearColor Color_Path;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Label|Colors")
+	FLinearColor Color_LabelStart;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Label|Colors")
+	FLinearColor Color_LavelGoal;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Label")
+	UFont* LabelFont;
+
+	// 라벨 표시/숨김
+	void ShowLabel(const FString& Text, FLinearColor Color);
+	void HideLabel();
+
 protected:
 	virtual void PostInitializeComponents() override;
-
 private:
 
 	// 타일 상태 변경

@@ -89,7 +89,7 @@ private:
 
     // 함수 트리거 쿨타임 기능에 사용
     float LastCallTime = 0.f;
-    float FuncCallCoolTime = 0.2f;
+    float FuncCallCoolTime = 0.1f;
 
     bool bRemovingObstacle = false;
     bool bIsMousePressed = false;

@@ -6,7 +6,7 @@
 #include "GridManager.generated.h"
 
 class ATileActor;
-class USplineComponent;
+class UDecalComponent;
 
 UCLASS()
 class ALGORITHMVISUALIZER_API AGridManager : public AActor
@@ -36,9 +36,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
     int32 CurrentHeight = 0;
 
-    UPROPERTY()
-    USplineComponent* PathSpline;
-
     // 그리드 생성 시 호출
     void GenerateGrid(int32 NewWidth, int32 NewHeight);
 
@@ -48,17 +45,17 @@ public:
     // 시작/목표 제외 그리드 타일 상태 초기화
     void ResetTileState();
 
+    // 모든 타일에 대해 타일 상태에 맞게 색 변경
+    void UpdateAllTileColor();
+
     // 인덱스로 타일 접근
     ATileActor* GetTile(int32 X, int32 Y) const;
 
     // 시작-목표 지점 뒤집기
     bool SwapStartEnd();
 
-    // 경로 그리기
-    void DrawPath(ATileActor* CurrentTile);
-
-    // 경로 초기화
-    void ClearDrawPath();
+    // 경로 그리기/제거
+    void DrawPath(ATileActor* CurrentTile, bool bDraw);
 
     ATileActor* StartTile = nullptr;
     ATileActor* EndTile = nullptr;
