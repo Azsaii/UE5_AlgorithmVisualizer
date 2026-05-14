@@ -14,12 +14,14 @@ ATileActor::ATileActor()
 
     LabelRoot = CreateDefaultSubobject<USceneComponent>(TEXT("LabelRoot"));
     LabelRoot->SetupAttachment(RootComponent);
-    LabelRoot->SetRelativeLocation(FVector(0, 0, 2));
+    LabelRoot->SetRelativeLocation(FVector(0, 0, 10));
 
     LabelWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("LabelWidget"));
     LabelWidget->SetupAttachment(LabelRoot);
     LabelWidget->SetPivot(FVector2D(0.5f, 0.5f));
+    LabelWidget->SetRelativeLocation(FVector(20, -20, 0));
     LabelWidget->SetRelativeRotation(FRotator(90, -180, 0));
+    LabelWidget->SetRelativeScale3D(FVector(0.9));
 
     // 화면 기준 UI
     LabelWidget->SetWidgetSpace(EWidgetSpace::World);

@@ -252,6 +252,7 @@ void AAlgorithmPlayerController::Input_StepOnce()
 
 void AAlgorithmPlayerController::Input_StepAll() 
 {
+    CurrentAlgorithm->ClearPath();
     CurrentAlgorithm->StepAll();
 }
 

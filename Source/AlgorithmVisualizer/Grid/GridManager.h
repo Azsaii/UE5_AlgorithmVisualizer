@@ -3,10 +3,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ControlPanelWidget.h"
+#include "ParentDirection.h"
 #include "GridManager.generated.h"
 
 class ATileActor;
-class UDecalComponent;
+class UProceduralMeshComponent;
 
 UCLASS()
 class ALGORITHMVISUALIZER_API AGridManager : public AActor
@@ -36,6 +37,15 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
     int32 CurrentHeight = 0;
 
+    UPROPERTY()
+    UProceduralMeshComponent* PathMeshComp;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Path")
+    UMaterialInterface* PathMaterial;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Path")
+    float PathLineWidth = 10.f;
+
     // 그리드 생성 시 호출
     void GenerateGrid(int32 NewWidth, int32 NewHeight);
 
@@ -54,6 +64,9 @@ public:
     // 시작-목표 지점 뒤집기
     bool SwapStartEnd();
 
+    // 시작/목표 지점에서 경로 그리는 위치 반환
+    FVector GetStartEndDrawPathLoc(EParentDirection dir, bool bStart);
+
     // 경로 그리기/제거
     void DrawPath(ATileActor* CurrentTile, bool bDraw);
 
@@ -61,6 +74,10 @@ public:
     ATileActor* EndTile = nullptr;
 
     UControlPanelWidget* ControlPanel = nullptr;
+
+protected:
+    virtual void BeginPlay() override;
+
 private:
     void AdjustCamera(int32 Width, int32 Height);
     void SpawnTiles(int32 Width, int32 Height);

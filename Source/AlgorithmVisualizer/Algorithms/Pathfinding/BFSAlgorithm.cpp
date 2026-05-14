@@ -58,7 +58,7 @@ void FBFSAlgorithm::StepOnce()
 		FString Msg = FString::Printf(TEXT("Open point (%d, %d)"), cx, cy);
 		GridManager->ControlPanel->UpdateStatusText(Msg);
 
-		for (int8 i = 0; i < 4; i++) {
+		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
 			if(nx < 0 || nx >= width || ny < 0 || ny >= height){}
@@ -67,6 +67,7 @@ void FBFSAlgorithm::StepOnce()
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurentTile;
+					OpenTile->PathParentDirection = static_cast<EParentDirection>(i);
 					OpenQueue.Enqueue(OpenTile);
 
 					if (OpenTile != GridManager->EndTile) {
@@ -109,7 +110,7 @@ void FBFSAlgorithm::StepAll()
 		int32 cx = CurentTile->GridX;
 		int32 cy = CurentTile->GridY;
 
-		for (int8 i = 0; i < 4; i++) {
+		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
 			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
@@ -118,6 +119,7 @@ void FBFSAlgorithm::StepAll()
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurentTile;
+					OpenTile->PathParentDirection = static_cast<EParentDirection>(i);
 					OpenQueue.Enqueue(OpenTile);
 					OpenTile->CurrentState = ETileState::Open;
 				}

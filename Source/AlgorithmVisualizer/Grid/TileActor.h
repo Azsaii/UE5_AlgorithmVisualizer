@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ParentDirection.h"
 #include "TileActor.generated.h"
 
 class UWidgetComponent;
@@ -55,7 +56,11 @@ public:
 	// 경로 상에 있을 때 머티리얼 밝기 값 변경
 	void SetPath(bool bPath);
 
+	// 경로 상 이전 타일
 	ATileActor* PathParent = nullptr;
+
+	// 경로 상 부모로 이어진 방향
+	EParentDirection PathParentDirection;
 
 	// 상태별 색상
 	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")

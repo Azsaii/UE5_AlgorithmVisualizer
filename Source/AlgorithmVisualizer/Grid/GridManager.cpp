@@ -3,7 +3,7 @@
 #include "Engine/World.h"
 #include "AlgorithmPawn.h"
 #include "AlgorithmPlayerController.h"
-#include "Components/DecalComponent.h"
+#include "ProceduralMeshComponent.h"
 
 AGridManager::AGridManager()
 {
@@ -11,7 +11,18 @@ AGridManager::AGridManager()
 
     USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
+
+    PathMeshComp = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("PathMesh"));
+    PathMeshComp->SetupAttachment(RootComponent);
 }
+
+void AGridManager::BeginPlay()
+{
+    Super::BeginPlay();
+    PathMeshComp->SetMaterial(0, PathMaterial);
+    PathMeshComp->SetCastShadow(false);
+}
+
 
 void AGridManager::AdjustCamera(int32 Width, int32 Height)
 {
@@ -150,11 +161,162 @@ bool AGridManager::SwapStartEnd()
     return true;
 }
 
+// start는 정방향, end는 역방향
+FVector AGridManager::GetStartEndDrawPathLoc(EParentDirection dir, bool bStart)
+{
+    if (bStart == false) {
+        int8 t = static_cast<int8>(dir);
+        t = (t + 4) % 8;
+        dir = static_cast<EParentDirection>(t);
+    }
+    float half = TileSize / 2 + 5;
+    switch (dir) {
+    case EParentDirection::UU: {
+        return FVector(half, 0.f, 2.f);
+    }
+    case EParentDirection::UR: {
+        return FVector(half, half, 2.f);
+    }
+    case EParentDirection::RR: {
+        return FVector(0.f, half, 2.f);
+    }
+    case EParentDirection::DR: {
+        return FVector(half * -1, half, 2.f);
+    }
+    case EParentDirection::DD: {
+        return FVector(half * -1, 0.f, 2.f);
+    }
+    case EParentDirection::DL: {
+        return FVector(half * -1, half * -1, 2.f);
+    }
+    case EParentDirection::LL: {
+        return FVector(0.f, half * -1, 2.f);
+    }
+    case EParentDirection::UL: {
+        return FVector(half, half * -1, 2.f);
+    }
+    }
+
+    return { 0.f, 0.f, 2.f };
+}
+
 void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 {
+    TArray<FVector> PathPoints;
     ATileActor* Tile = CurrentTile;
+    EParentDirection prevDirection;
     while (Tile) {
-        Tile->SetPath(bDraw);
+        FVector offset = { 0.f, 0.f, 2.f };
+        if (Tile == StartTile) offset = GetStartEndDrawPathLoc(prevDirection, true);
+        else if(Tile == EndTile) offset = GetStartEndDrawPathLoc(Tile->PathParentDirection, false);
+        
+        PathPoints.Add(Tile->GetActorLocation() + offset);
+        prevDirection = Tile->PathParentDirection;
+
+        Tile->SetPath(bDraw); // 밝기 조절
         Tile = Tile->PathParent;
     }
+
+    // 이전 메시 초기화
+    PathMeshComp->ClearAllMeshSections();
+    if (!bDraw || PathPoints.Num() < 2) return;
+
+    TArray<FVector>   Vertices;
+    TArray<int32>     Triangles;
+    TArray<FVector>   Normals;
+    TArray<FVector2D> UVs;
+
+    // 선 너비
+    float HalfW = PathLineWidth * 0.5f;
+
+    // 각 포인트의 Left/Right 꼭짓점을 미리 계산
+    TArray<FVector> LeftPts;
+    TArray<FVector> RightPts;
+
+    int32 Last = PathPoints.Num() - 1;
+
+    for (int32 i = 0; i <= Last; i++)
+    {
+        FVector MiterRight;
+
+        if (i == 0)
+        {
+            // 시작점: 첫 번째 구간 방향만 사용
+            FVector Dir = (PathPoints[1] - PathPoints[0]).GetSafeNormal();
+            MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
+        }
+        else if (i == Last)
+        {
+            // 끝점: 마지막 구간 방향만 사용
+            FVector Dir = (PathPoints[Last] - PathPoints[Last - 1]).GetSafeNormal();
+            MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
+        }
+        else
+        {
+            // 중간 꺾임 지점: Miter 벡터 계산
+            FVector DirA = (PathPoints[i] - PathPoints[i - 1]).GetSafeNormal();
+            FVector DirB = (PathPoints[i + 1] - PathPoints[i]).GetSafeNormal();
+
+            FVector RightA = FVector::CrossProduct(FVector::UpVector, DirA).GetSafeNormal();
+            FVector RightB = FVector::CrossProduct(FVector::UpVector, DirB).GetSafeNormal();
+            FVector Miter = (RightA + RightB).GetSafeNormal();
+
+            // 꺾임 각도에 따라 너비 보정
+            float Dot = FVector::DotProduct(RightA, Miter);
+            float Scale = FMath::IsNearlyZero(Dot) ? 1.f : 1.f / Dot;
+            Scale = FMath::Clamp(Scale, 0.f, 3.f); // 날카로운 꺾임 제한
+
+            MiterRight = Miter * Scale;
+        }
+
+        LeftPts.Add(PathPoints[i] - MiterRight * HalfW);
+        RightPts.Add(PathPoints[i] + MiterRight * HalfW);
+    }
+
+    // 전체 경로 길이 먼저 계산 - 색상 변경에 사용
+    float TotalLength = 0.f;
+    for (int32 i = 0; i < Last; i++)
+    {
+        TotalLength += FVector::Dist(PathPoints[i], PathPoints[i + 1]);
+    }
+
+    // UV 설정 시 전체 길이로 나눠서 0~1 정규화
+    float AccumLength = 0.f;
+    for (int32 i = 0; i < Last; i++)
+    {
+        int32 Base = Vertices.Num();
+
+        Vertices.Add(LeftPts[i]);       // v0
+        Vertices.Add(RightPts[i]);      // v1
+        Vertices.Add(LeftPts[i + 1]);     // v2
+        Vertices.Add(RightPts[i + 1]);    // v3
+
+        Normals.Add(FVector::UpVector);
+        Normals.Add(FVector::UpVector);
+        Normals.Add(FVector::UpVector);
+        Normals.Add(FVector::UpVector);
+
+        float SegLen = FVector::Dist(PathPoints[i], PathPoints[i + 1]);
+        float UVStart = AccumLength / TotalLength;
+        float UVEnd = (AccumLength + SegLen) / TotalLength;
+        AccumLength += SegLen;
+
+        UVs.Add(FVector2D(0.f, UVStart)); // v0
+        UVs.Add(FVector2D(1.f, UVStart)); // v1
+        UVs.Add(FVector2D(0.f, UVEnd));   // v2
+        UVs.Add(FVector2D(1.f, UVEnd));   // v3
+
+        Triangles.Add(Base + 0);
+        Triangles.Add(Base + 1);
+        Triangles.Add(Base + 2);
+
+        Triangles.Add(Base + 1);
+        Triangles.Add(Base + 3);
+        Triangles.Add(Base + 2);
+    }
+
+    PathMeshComp->CreateMeshSection(
+        0, Vertices, Triangles, Normals, UVs,
+        TArray<FColor>(), TArray<FProcMeshTangent>(), false
+    );
 }
