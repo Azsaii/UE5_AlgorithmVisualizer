@@ -41,6 +41,7 @@ public:
     AGridManager* GridManager = nullptr;
     AGraphManager* GraphManager = nullptr;
 
+    // 알고리즘 변경 - ui에서 호출
     void SwitchAlgorithm(EAlgorithmType Type);
 
     // ui에서 호출됨

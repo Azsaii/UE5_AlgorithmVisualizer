@@ -16,12 +16,21 @@ void UControlPanelWidget::NativeConstruct()
     TextBox_Width->SetText(FText::FromString(TEXT("10")));
     TextBox_Height->SetText(FText::FromString(TEXT("10")));
 
-    Button_Apply->OnClicked.AddDynamic(this, &UControlPanelWidget::OnApplyClicked);
+    Btn_TileSet->OnClicked.AddDynamic(this, &UControlPanelWidget::OnTileSetClicked);
 
     Text_Status->SetText(FText::FromString(TEXT("Enter grid size and click Apply")));
+
+    // 알고리즘 버튼 세팅
+    AlgorithmSwitchBtns = { Btn_SwitchBFS, Btn_SwitchDFS, Btn_SwitchAStar, Btn_SwitchJPS,
+        Btn_SwitchDijkstra, Btn_SwitchBellmanFord, Btn_SwitchKruskal, Btn_SwitchPrim };
+
+    for (UButton* Btn : AlgorithmSwitchBtns) {
+        Btn->OnClicked.AddDynamic(this, &UControlPanelWidget::OnAnyButtonClicked);
+        AddAlgorithmButton(Btn);
+    }
 }
 
-void UControlPanelWidget::OnApplyClicked()
+void UControlPanelWidget::OnTileSetClicked()
 {
     if (!GridManager) { UE_LOG(LogTemp, Warning, TEXT("GridManager reference is null")); return; }
 
@@ -63,5 +72,85 @@ void UControlPanelWidget::UpdateStatusText(const FString& Message)
 
     UCanvasPanelSlot* BackgroundSlot = Cast<UCanvasPanelSlot>(StatusBackground->Slot);
     if (BackgroundSlot) BackgroundSlot->SetSize(NewSize);
+}
 
+// 눌린 버튼을 호버로 판별
+void UControlPanelWidget::OnAnyButtonClicked()
+{
+    for (FAlgorithmBtn& Btn : FAlgorithmBtns) {
+        if (Btn.Button->IsHovered()) {
+            SelectAlgorithmBtn(Btn.Button);
+            return;
+        }
+    }
+}
+
+void UControlPanelWidget::SelectAlgorithmBtn(UButton* InButton)
+{
+    FAlgorithmBtn prevSelectedBtn;
+    FAlgorithmBtn curSelectedBtn;
+
+    for (FAlgorithmBtn& FBtn : FAlgorithmBtns) {
+        if (FBtn.Button == SelectedAlgorithmBtn) prevSelectedBtn = FBtn;
+        if (FBtn.Button == InButton) curSelectedBtn = FBtn;
+    }
+
+
+    if (SelectedAlgorithmBtn) {
+        prevSelectedBtn.Button->SetStyle(prevSelectedBtn.DefaultStyle);
+    }
+
+    SelectedAlgorithmBtn = InButton;
+    SelectedAlgorithmBtn->SetStyle(curSelectedBtn.SelectedStyle);
+
+
+    if (InButton == Btn_SwitchBFS) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::BFS);
+    }
+    else if (InButton == Btn_SwitchDFS) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::DFS);
+    }
+    else if (InButton == Btn_SwitchAStar) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::ASTAR);
+    }
+    else if (InButton == Btn_SwitchJPS) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::JPS);
+    }
+    else if (InButton == Btn_SwitchDijkstra) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::DIJKSTRA);
+    }
+    else if (InButton == Btn_SwitchBellmanFord) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::BELLMAN_FORD);
+    }
+    else if (InButton == Btn_SwitchKruskal) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::KRUSKAL);
+    }
+    else if (InButton == Btn_SwitchPrim) {
+        ALPC->SwitchAlgorithm(EAlgorithmType::PRIM);
+    }
+}
+
+void UControlPanelWidget::AddAlgorithmButton(UButton* btn)
+{
+    FAlgorithmBtn& Data = FAlgorithmBtns.AddDefaulted_GetRef();
+
+    Data.Button = btn;
+    Data.DefaultStyle = btn->GetStyle();
+    Data.SelectedStyle = Data.DefaultStyle;
+
+    auto Darken = [](FSlateColor Color)
+        {
+            FLinearColor HSV =
+                Color.GetSpecifiedColor().LinearRGBToHSV();
+
+            // 밝기(Value) 강하게 감소
+            HSV.B = FMath::Clamp(HSV.B * 0.35f, 0.f, 1.f);
+
+            // 채도 약간 증가하면 더 진하게 보임
+            HSV.G = FMath::Clamp(HSV.G * 1.2f, 0.f, 1.f);
+
+            return FSlateColor(HSV.HSVToLinearRGB());
+        };
+
+    Data.SelectedStyle.Normal.TintColor = Darken(Data.SelectedStyle.Normal.TintColor);
 }

@@ -14,6 +14,8 @@
 #include "BellmanFordAlgorithm.h"
 #include "KruskalAlgorithm.h"
 #include "PrimAlgorithm.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Framework/Application/NavigationConfig.h"
 
 AAlgorithmPlayerController::AAlgorithmPlayerController()
 {
@@ -34,9 +36,19 @@ void AAlgorithmPlayerController::BeginPlay()
     FTimerHandle TimerHandle;
     GetWorldTimerManager().SetTimer(TimerHandle, [this]()
         {
-            CurrentAlgorithm = MakeUnique<FDFSAlgorithm>(GridManager);
+            CurrentAlgorithm = MakeUnique<FBFSAlgorithm>(GridManager);
+
+            // 기본으로 BFS 선택
+            ControlPanel->SelectAlgorithmBtn(ControlPanel->Btn_SwitchBFS);
         }, 0.1f, false);
     
+    // UI가 Space 키 안먹게 하기
+    TSharedRef<FNavigationConfig> NavConfig = MakeShared<FNavigationConfig>();
+
+    // 기본적으로 Space가 Accept로 등록되어 있음
+    NavConfig->KeyActionRules.Remove(EKeys::SpaceBar);
+
+    FSlateApplication::Get().SetNavigationConfig(NavConfig);
 }
 
 void AAlgorithmPlayerController::Tick(float DeltaTime)
@@ -267,7 +279,7 @@ void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
         break;
     }
     case EAlgorithmType::DFS: {
-
+        CurrentAlgorithm = MakeUnique<FDFSAlgorithm>(GridManager);
         break;
     }
     case EAlgorithmType::ASTAR: {
