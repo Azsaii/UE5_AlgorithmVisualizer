@@ -35,25 +35,27 @@ void FBFSAlgorithm::StepOnce()
 	int32 height = GridManager->CurrentHeight;
 
 	// 이전 경로 제거
-	if (CurentTile) GridManager->DrawPath(CurentTile, false);
+	if (CurrentTile) GridManager->DrawPath(CurrentTile, false);
 
-	bool bSuccess = OpenQueue.Dequeue(CurentTile);
+	bool bSuccess = OpenQueue.Dequeue(CurrentTile);
 	if (bSuccess == true) {
-		GridManager->DrawPath(CurentTile, true);
+		
+		// 현재 경로 그리기
+		GridManager->DrawPath(CurrentTile, true);
 
-		if (CurentTile != GridManager->StartTile && CurentTile != GridManager->EndTile) {
-			CurentTile->SetStateAndColor(ETileState::Closed);
+		if (CurrentTile != GridManager->StartTile && CurrentTile != GridManager->EndTile) {
+			CurrentTile->SetStateAndColor(ETileState::Closed);
 		}
-		else CurentTile->CurrentState = ETileState::Closed;
+		else CurrentTile->CurrentState = ETileState::Closed;
 
-		if (CurentTile == GridManager->EndTile) {
+		if (CurrentTile == GridManager->EndTile) {
 			bFindEnd = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Path found!"));
 			return;
 		}
 
-		int32 cx = CurentTile->GridX;
-		int32 cy = CurentTile->GridY;
+		int32 cx = CurrentTile->GridX;
+		int32 cy = CurrentTile->GridY;
 
 		FString Msg = FString::Printf(TEXT("Open point (%d, %d)"), cx, cy);
 		GridManager->ControlPanel->UpdateStatusText(Msg);
@@ -66,7 +68,7 @@ void FBFSAlgorithm::StepOnce()
 				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
-					OpenTile->PathParent = CurentTile;
+					OpenTile->PathParent = CurrentTile;
 					OpenTile->PathParentDirection = static_cast<EParentDirection>(i);
 					OpenQueue.Enqueue(OpenTile);
 
@@ -97,18 +99,18 @@ void FBFSAlgorithm::StepAll()
 	int32 height = GridManager->CurrentHeight;
 
 	while (!OpenQueue.IsEmpty()) {
-		OpenQueue.Dequeue(CurentTile);
-		CurentTile->CurrentState = ETileState::Closed;
+		OpenQueue.Dequeue(CurrentTile);
+		CurrentTile->CurrentState = ETileState::Closed;
 
-		if (CurentTile == GridManager->EndTile) {
+		if (CurrentTile == GridManager->EndTile) {
 			bFindEnd = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Path found!"));
-			GridManager->DrawPath(GridManager->EndTile, true);
+			GridManager->DrawPath(GridManager->EndTile, true); // 경로 그리기
 			break;
 		}
 
-		int32 cx = CurentTile->GridX;
-		int32 cy = CurentTile->GridY;
+		int32 cx = CurrentTile->GridX;
+		int32 cy = CurrentTile->GridY;
 
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
@@ -118,7 +120,7 @@ void FBFSAlgorithm::StepAll()
 				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
-					OpenTile->PathParent = CurentTile;
+					OpenTile->PathParent = CurrentTile;
 					OpenTile->PathParentDirection = static_cast<EParentDirection>(i);
 					OpenQueue.Enqueue(OpenTile);
 					OpenTile->CurrentState = ETileState::Open;
@@ -139,7 +141,7 @@ void FBFSAlgorithm::StepAll()
 void FBFSAlgorithm::ClearPath()
 {
 	// 이전 경로 제거
-	if (CurentTile) GridManager->DrawPath(CurentTile, false);
+	if (CurrentTile) GridManager->DrawPath(CurrentTile, false);
 
 	OpenQueue.Empty();
 	GridManager->ResetTileState();

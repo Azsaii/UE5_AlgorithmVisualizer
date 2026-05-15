@@ -283,7 +283,7 @@ void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
         break;
     }
     case EAlgorithmType::ASTAR: {
-
+        CurrentAlgorithm = MakeUnique<FAStarAlgorithm>(GridManager);
         break;
     }
     case EAlgorithmType::JPS: {

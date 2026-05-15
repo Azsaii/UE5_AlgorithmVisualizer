@@ -23,7 +23,6 @@ void AGridManager::BeginPlay()
     PathMeshComp->SetCastShadow(false);
 }
 
-
 void AGridManager::AdjustCamera(int32 Width, int32 Height)
 {
     APlayerController* PC = GetWorld()->GetFirstPlayerController();
@@ -78,13 +77,22 @@ void AGridManager::ReGenerateGrid()
 
 void AGridManager::ResetTileState()
 {
-    for (ATileActor* Tile : GridTiles) {
+    for (ATileActor* Tile : GridTiles)
+    {
         if(Tile->CurrentState != ETileState::Obstacle)
             Tile->SetStateAndColor(ETileState::Unvisited);
     }
 
     if(StartTile) StartTile->SetStateAndColor(ETileState::Start);
     if(EndTile) EndTile->SetStateAndColor(ETileState::Goal);
+}
+
+void AGridManager::ResetOpenNode()
+{
+    for (ATileActor* Tile : GridTiles)
+    {
+        Tile->OpenNode.ResetOpenNode();
+    }
 }
 
 void AGridManager::UpdateAllTileColor()
@@ -204,7 +212,7 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 {
     TArray<FVector> PathPoints;
     ATileActor* Tile = CurrentTile;
-    EParentDirection prevDirection;
+    EParentDirection prevDirection = EParentDirection::UU;
     while (Tile) {
         FVector offset = { 0.f, 0.f, 2.f };
         if (Tile == StartTile) offset = GetStartEndDrawPathLoc(prevDirection, true);
@@ -243,13 +251,17 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
         {
             // 시작점: 첫 번째 구간 방향만 사용
             FVector Dir = (PathPoints[1] - PathPoints[0]).GetSafeNormal();
+            if (Dir.IsNearlyZero()) continue;
             MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
+            if (MiterRight.IsNearlyZero()) MiterRight = FVector::RightVector;
         }
         else if (i == Last)
         {
             // 끝점: 마지막 구간 방향만 사용
             FVector Dir = (PathPoints[Last] - PathPoints[Last - 1]).GetSafeNormal();
+            if (Dir.IsNearlyZero()) continue;
             MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
+            if (MiterRight.IsNearlyZero()) MiterRight = FVector::RightVector;
         }
         else
         {
@@ -259,7 +271,12 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 
             FVector RightA = FVector::CrossProduct(FVector::UpVector, DirA).GetSafeNormal();
             FVector RightB = FVector::CrossProduct(FVector::UpVector, DirB).GetSafeNormal();
+
             FVector Miter = (RightA + RightB).GetSafeNormal();
+            if (Miter.IsNearlyZero()) {
+                // 180도 꺾임 → 이전 방향 그대로 사용
+                MiterRight = RightA;
+            }
 
             // 꺾임 각도에 따라 너비 보정
             float Dot = FVector::DotProduct(RightA, Miter);

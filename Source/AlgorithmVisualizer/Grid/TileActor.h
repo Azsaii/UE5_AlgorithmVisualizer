@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ParentDirection.h"
+#include "OpenNode.h"
 #include "TileActor.generated.h"
 
 class UWidgetComponent;
 
-UENUM()
 enum class ETileState : uint8
 {
 	Unvisited,
@@ -47,7 +47,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Grid")
 	int32 GridY = 0;
-
+	
 	void SetStateAndColor(ETileState NewState);
 
 	// 호버 상태 변경
@@ -92,6 +92,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Label")
 	UFont* LabelFont;
+
+	// A*, JPS 에서 사용
+	FOpenNode OpenNode;
 
 	// 라벨 표시/숨김
 	void ShowLabel(const FString& Text, FLinearColor Color);
