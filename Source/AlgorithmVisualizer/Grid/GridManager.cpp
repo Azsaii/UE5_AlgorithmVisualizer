@@ -213,6 +213,7 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
     TArray<FVector> PathPoints;
     ATileActor* Tile = CurrentTile;
     EParentDirection prevDirection = EParentDirection::UU;
+
     while (Tile) {
         FVector offset = { 0.f, 0.f, 2.f };
         if (Tile == StartTile) offset = GetStartEndDrawPathLoc(prevDirection, true);
@@ -221,7 +222,7 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
         PathPoints.Add(Tile->GetActorLocation() + offset);
         prevDirection = Tile->PathParentDirection;
 
-        Tile->SetPath(bDraw); // 밝기 조절
+        Tile->SetPath(bDraw); // 경로 여부에 따라 밝기 머티리얼 값 조정
         Tile = Tile->PathParent;
     }
 

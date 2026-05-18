@@ -79,6 +79,9 @@ void FAStarAlgorithm::StepOnce()
 		else {
 			ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 
+			// 장애물이면 다음 노드 탐색으로 넘어가기.
+			if (OpenTile->CurrentState == ETileState::Obstacle) continue;
+
 			// 목적지까지 거리
 			int32 rx = abs(ex - nx);
 			int32 ry = abs(ey - ny);
@@ -109,14 +112,20 @@ void FAStarAlgorithm::StepOnce()
 			int32 nextWeight = nextMoveCount + nextRemainDistance;
 			bool check = false;
 
-			// 1) 첫 탐색: 시 오픈 리스트에 넣는다.
+			// 1) 첫 탐색: 오픈 리스트에 넣는다.
 			if (OpenTile->OpenNode.bVisited == false) {
 				check = true;
 			}
 			// 2) 재 탐색: 가중치 비교해서 이번 경로가 더 좋으면 업데이트한다.
-			else if(OpenTile->OpenNode.Weight > nextWeight){
-				// pop -> push 로 가중치 기준 재정렬.
-				OpenQueue.HeapPop(OpenTile, FTilePredicate());
+			else if(OpenTile->OpenNode.MoveCount > nextMoveCount) {
+
+				// 오픈 리스트에서 제거
+				int32 idx = OpenQueue.Find(OpenTile);
+				if (idx != INDEX_NONE) {
+					OpenQueue.RemoveAt(idx);
+					OpenQueue.Heapify(FTilePredicate()); // 힙 재구성
+				}
+
 				check = true;
 			}
 
@@ -195,6 +204,9 @@ void FAStarAlgorithm::StepAll()
 			else {
 				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 
+				// 장애물이면 다음 노드 탐색으로 넘어가기.
+				if (OpenTile->CurrentState == ETileState::Obstacle) continue;
+
 				// 목적지까지 거리
 				int32 rx = abs(ex - nx);
 				int32 ry = abs(ey - ny);
@@ -231,8 +243,14 @@ void FAStarAlgorithm::StepAll()
 				}
 				// 2) 재 탐색: 가중치 비교해서 이번 경로가 더 좋으면 업데이트한다.
 				else if (OpenTile->OpenNode.Weight > nextWeight) {
-					// pop -> push 로 가중치 기준 재정렬.
-					OpenQueue.HeapPop(OpenTile, FTilePredicate());
+					
+					// 오픈 리스트에서 제거
+					int32 idx = OpenQueue.Find(OpenTile);
+					if (idx != INDEX_NONE) {
+						OpenQueue.RemoveAt(idx);
+						OpenQueue.Heapify(FTilePredicate()); // 힙 재구성
+					}
+
 					check = true;
 				}
 

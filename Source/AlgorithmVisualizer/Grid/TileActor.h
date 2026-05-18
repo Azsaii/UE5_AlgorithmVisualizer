@@ -57,6 +57,7 @@ public:
 	void SetPath(bool bPath);
 
 	// 경로 상 이전 타일
+	UPROPERTY()
 	ATileActor* PathParent = nullptr;
 
 	// 경로 상 부모로 이어진 방향
