@@ -75,24 +75,20 @@ void AGridManager::ReGenerateGrid()
     AdjustCamera(CurrentWidth, CurrentHeight);
 }
 
-void AGridManager::ResetTileState()
+void AGridManager::ResetTile()
 {
     for (ATileActor* Tile : GridTiles)
     {
         if(Tile->CurrentState != ETileState::Obstacle)
             Tile->SetStateAndColor(ETileState::Unvisited);
+
+        Tile->OpenNode.ResetOpenNode();
+
+        Tile->PathParent = nullptr;
     }
 
     if(StartTile) StartTile->SetStateAndColor(ETileState::Start);
     if(EndTile) EndTile->SetStateAndColor(ETileState::Goal);
-}
-
-void AGridManager::ResetOpenNode()
-{
-    for (ATileActor* Tile : GridTiles)
-    {
-        Tile->OpenNode.ResetOpenNode();
-    }
 }
 
 void AGridManager::UpdateAllTileColor()
@@ -224,6 +220,7 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 
         Tile->SetPath(bDraw); // 경로 여부에 따라 밝기 머티리얼 값 조정
         Tile = Tile->PathParent;
+        if (bDraw && Tile) UE_LOG(LogTemp, Error, TEXT("next %d, %d"), Tile->GridX, Tile->GridY);
     }
 
     // 이전 메시 초기화

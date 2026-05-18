@@ -131,7 +131,7 @@ void AAlgorithmPlayerController::Input_ClickStarted()
     bIsMousePressed = true;
 
     // 기존 경로탐색 제거
-    Input_ClearPath();
+    CurrentAlgorithm->ClearPath();
 
     switch (CurrentEditMode) {
     case EEditMode::SetStart: {
@@ -225,7 +225,7 @@ void AAlgorithmPlayerController::Input_ClickCompleted()
 
 void AAlgorithmPlayerController::Input_SwapStartEnd() 
 {
-    Input_ClearPath();
+    CurrentAlgorithm->ClearPath();
 
     FString Msg;
 

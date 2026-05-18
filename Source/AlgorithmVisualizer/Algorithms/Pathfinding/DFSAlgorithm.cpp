@@ -142,7 +142,7 @@ void FDFSAlgorithm::ClearPath()
 	if (CurrentTile) GridManager->DrawPath(CurrentTile, false);
 
 	OpenStack.Empty();
-	GridManager->ResetTileState();
+	GridManager->ResetTile();
 	GridManager->ControlPanel->UpdateStatusText(TEXT("Path cleared!"));
 	bFindEnd = false;
 	bUnreachable = false;

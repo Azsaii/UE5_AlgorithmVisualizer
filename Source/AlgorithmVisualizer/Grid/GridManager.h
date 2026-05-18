@@ -52,11 +52,8 @@ public:
     // 그리드 재생성 시 호출
     void ReGenerateGrid();
 
-    // 시작/목표 제외 그리드 타일 상태 초기화
-    void ResetTileState();
-
-    // 오픈 노드 초기화
-    void ResetOpenNode();
+    // 타일 데이터 초기화
+    void ResetTile();
 
     // 모든 타일에 대해 타일 상태에 맞게 색 변경
     void UpdateAllTileColor();

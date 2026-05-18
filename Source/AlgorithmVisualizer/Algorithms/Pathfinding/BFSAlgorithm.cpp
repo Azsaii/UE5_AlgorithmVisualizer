@@ -65,6 +65,7 @@ void FBFSAlgorithm::StepOnce()
 			int32 ny = cy + dy[i];
 			if(nx < 0 || nx >= width || ny < 0 || ny >= height){}
 			else {
+				UE_LOG(LogTemp, Error, TEXT("nx, ny: %d, %d"), nx, ny);
 				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
@@ -77,15 +78,17 @@ void FBFSAlgorithm::StepOnce()
 					}
 					else OpenTile->CurrentState = ETileState::Open;
 				}
+				UE_LOG(LogTemp, Error, TEXT("test 1"));
 			}
 		}
-
+		UE_LOG(LogTemp, Error, TEXT("test 2"));
 		if (OpenQueue.IsEmpty()) {
 			bUnreachable = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
 			return;
 		}
 	}
+	UE_LOG(LogTemp, Error, TEXT("test 3"));
 }
 
 void FBFSAlgorithm::StepAll()
@@ -144,8 +147,9 @@ void FBFSAlgorithm::ClearPath()
 	if (CurrentTile) GridManager->DrawPath(CurrentTile, false);
 
 	OpenQueue.Empty();
-	GridManager->ResetTileState();
+	GridManager->ResetTile();
 	GridManager->ControlPanel->UpdateStatusText(TEXT("Path cleared!"));
 	bFindEnd = false;
 	bUnreachable = false;
+	CurrentTile = nullptr;
 }
