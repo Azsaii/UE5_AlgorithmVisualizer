@@ -62,6 +62,7 @@
 
 > *(추후 GIF 또는 스크린샷 더 추가 예정)*
  <img width="2557" height="1388" alt="1" src="https://github.com/user-attachments/assets/bb6ec2e4-43a2-452e-a7a1-e2c56612ff14" />
+ <img width="2555" height="1386" alt="1" src="https://github.com/user-attachments/assets/740efe1a-24ca-4983-a87c-2ba4b0e81823" />
 
  
 ---
