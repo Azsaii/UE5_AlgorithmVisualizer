@@ -301,7 +301,7 @@ void FJPSAlgorithm::StepOnce()
 	bool IsStart = CurrentTile == GridManager->StartTile;
 
 	// 상태 표시
-	if (CurrentTile != GridManager->StartTile && CurrentTile != GridManager->EndTile) {
+	if (CurrentTile != GridManager->StartTile) {
 		CurrentTile->SetStateAndColor(ETileState::Closed);
 	}
 	else CurrentTile->CurrentState = ETileState::Closed;
@@ -402,94 +402,86 @@ void FJPSAlgorithm::StepAll()
 	{
 		// 가중치 가장 작은 노드 뽑기
 		OpenQueue.HeapPop(CurrentTile, FTilePredicate());
-
-		// 상태 표시
 		CurrentTile->CurrentState = ETileState::Closed;
+
+		int32 cx = CurrentTile->GridX;
+		int32 cy = CurrentTile->GridY;
+		int32 offset = cx + cy * width;
+
+		// 자식 노드 있으면 오픈 리스트에 넣기
+		ATileActor* child = ChildArray[offset];
+		if (child != nullptr) {
+			UpdateNode(true, child, CurrentTile);
+		}
 
 		// 목표지점 도달 시 종료
 		if (CurrentTile == GridManager->EndTile) {
 			bFindEnd = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Path found!"));
-			GridManager->DrawPath(GridManager->EndTile, true); // 경로 그리기
+			GridManager->DrawPath(CurrentTile, true); // 경로 그리기
 			break;
 		}
 
-		int32 cx = CurrentTile->GridX;
-		int32 cy = CurrentTile->GridY;
+		bool IsStart = CurrentTile == GridManager->StartTile;
 
-		// 인접 노드 탐색
-		for (int8 i = 0; i < DIRSIZE; i++) {
-			int32 nx = cx + dx[i];
-			int32 ny = cy + dy[i];
-			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-			else {
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+		if (IsStart) {
+			// 시작점은 방향이 없으므로 주변 8방향 노드 탐색
+			for (int8 i = 0; i < DIRSIZE; i++) {
+				Jump(cx, cy, static_cast<DIR>(i), CurrentTile);
+			}
+		}
+		else {
+			DIR& CurrentDir = DirectionArray[offset];
+			int32 idx = static_cast<int32>(CurrentDir);
+			Jump(cx, cy, CurrentDir, CurrentTile);
 
-				// 장애물이면 다음 노드 탐색으로 넘어가기.
-				if (OpenTile->CurrentState == ETileState::Obstacle) continue;
+			// ------------------------------------------------
+			// 모서리 있으면 현재 방향의 양 옆 방향 탐색
+			// 현재 방향이 직선이면 양 옆은 조건 맞을 때만 탐색
+			// 대각선이면 양 옆은 조건 없이 탐색
+			// ------------------------------------------------
+			bool IsStraight = !(idx & 1);
 
-				// 목적지까지 거리
-				int32 rx = abs(ex - nx);
-				int32 ry = abs(ey - ny);
+			int32 left = idx - 1;
+			if (left < 0) left += 8;
 
-				// 기본적으로 직선일 때 맨해튼방식으로 계산해서 초기화.
-				int32 nextMoveCount = STRAIGHT_DISTANCE;
-				int32 nextRemainDistance = (rx + ry) * STRAIGHT_DISTANCE;
-
-				// i가 홀수면 대각선.
-				// 거리 계산시 MANHATTAN 은 2칸으로, EUCLID는 1.4칸으로 계산.
-				// 목적지 까지 거리 계산 시 EUCLID는 피타고라스 정리로 계산.
-				if (i & 1) {
-					switch (FindMethod) {
-					case MANHATTAN: {
-						nextMoveCount = STRAIGHT_DISTANCE * 2;
-						break;
-					}
-					case EUCLID: {
-						nextMoveCount = DIAGONAL_DISTANCE;
-						double tmp = sqrt(rx * rx + ry * ry) * STRAIGHT_DISTANCE;
-						nextRemainDistance = static_cast<int32>(tmp);
-						break;
-					}
-					}
+			// 직선 방향이면 조건 하에 옆 방향 탐색
+			if (IsStraight) {
+				auto arr = ForcedTable[idx].ForcedArray[0];
+				bool isBlocked = !IsWalkable(cx + arr.block_dx, cy + arr.block_dy);
+				bool isOpen = IsWalkable(cx + arr.open_dx, cy + arr.open_dy);
+				if (isBlocked && isOpen) {
+					Jump(cx, cy, static_cast<DIR>(left), CurrentTile);
 				}
-				nextMoveCount += CurrentTile->OpenNode.MoveCount;
+			}
+			// 대각선이면 조건 없이 옆 방향 탐색
+			else Jump(cx, cy, static_cast<DIR>(left), CurrentTile);
 
-				int32 nextWeight = nextMoveCount + nextRemainDistance;
-				bool check = false;
+			int32 right = idx + 1;
+			if (right > 7) right = 0;
+			if (IsStraight) {
+				auto arr = ForcedTable[idx].ForcedArray[1];
+				bool isBlocked = !IsWalkable(cx + arr.block_dx, cy + arr.block_dy);
+				bool isOpen = IsWalkable(cx + arr.open_dx, cy + arr.open_dy);
+				if (isBlocked && isOpen) Jump(cx, cy, static_cast<DIR>(right), CurrentTile);
+			}
+			else Jump(cx, cy, static_cast<DIR>(right), CurrentTile);
 
-				// 1) 첫 탐색: 시 오픈 리스트에 넣는다.
-				if (OpenTile->OpenNode.bVisited == false) {
-					check = true;
-				}
-				// 2) 재 탐색: 가중치 비교해서 이번 경로가 더 좋으면 업데이트한다.
-				else if (OpenTile->OpenNode.Weight > nextWeight) {
 
-					// 오픈 리스트에서 제거
-					int32 idx = OpenQueue.Find(OpenTile);
-					if (idx != INDEX_NONE) {
-						OpenQueue.RemoveAt(idx);
-						OpenQueue.Heapify(FTilePredicate()); // 힙 재구성
-					}
-
-					check = true;
+			// 현재 방향이 대각선이면 주변 대각선 방향 추가 탐색
+			if (!IsStraight) {
+				left--;
+				if (left < 0) left += 8;
+				auto arr = ForcedTable[idx].ForcedArray[2];
+				if (!IsWalkable(cx + arr.block_dx, cy + arr.block_dy)) {
+					Jump(cx, cy, static_cast<DIR>(left), CurrentTile);
 				}
 
-				if (check) {
-					// 노드 업데이트
-					OpenTile->OpenNode.UpdateOpenNode(true, nextMoveCount, nextRemainDistance);
-
-					// 부모 변경
-					OpenTile->PathParent = CurrentTile;
-
-					// 오픈 리스트에 새로 넣기
-					OpenQueue.HeapPush(OpenTile, FTilePredicate());
-
-					// 경로 선 방향 얻기
-					OpenTile->PathParentDirection = static_cast<EParentDirection>(i);
-
-					// 상태만 업데이트
-					OpenTile->CurrentState = ETileState::Open;
+				right++;
+				if (right > 7) right = 0;
+				arr = ForcedTable[idx].ForcedArray[3];
+				if (!IsWalkable(cx + arr.block_dx, cy + arr.block_dy)) {
+					Jump(cx, cy, static_cast<DIR>(right), CurrentTile);
 				}
 			}
 		}
