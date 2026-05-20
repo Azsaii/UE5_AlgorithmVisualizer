@@ -61,8 +61,9 @@
 ## 🎬 시연 영상 / 스크린샷
 
 > *(추후 GIF 또는 스크린샷 더 추가 예정)*
- <img width="2557" height="1388" alt="1" src="https://github.com/user-attachments/assets/bb6ec2e4-43a2-452e-a7a1-e2c56612ff14" />
- <img width="2555" height="1386" alt="1" src="https://github.com/user-attachments/assets/740efe1a-24ca-4983-a87c-2ba4b0e81823" />
+
+<img width="1277" height="691" alt="1" src="https://github.com/user-attachments/assets/f4387e17-74a8-4cb8-9aeb-c91e4d13b882" />
+<img width="2554" height="1387" alt="2" src="https://github.com/user-attachments/assets/1bb2d8b0-d657-4052-bcf1-a40874c8f9cd" />
 
  
 ---
