@@ -19,7 +19,9 @@ enum class ETileState : uint8
 
 	Open,    // 탐색 후보
 	Closed,  // 탐색 완료
-	Path     // 최종 경로
+	Path,     // 최종 경로
+
+	Test,
 };
 
 UCLASS()
@@ -84,6 +86,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
 	FLinearColor Color_Path;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Tile|Colors")
+	FLinearColor Color_Test;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Label|Colors")
 	FLinearColor Color_LabelStart;

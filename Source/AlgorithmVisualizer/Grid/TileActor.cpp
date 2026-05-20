@@ -81,6 +81,7 @@ FLinearColor ATileActor::StateToColor(ETileState State)
     case ETileState::Open:      return Color_Open;
     case ETileState::Closed:    return Color_Closed;
     case ETileState::Path:      return Color_Path;
+    case ETileState::Test:      return Color_Test;
     default:                    return FLinearColor::White;
     }
 }

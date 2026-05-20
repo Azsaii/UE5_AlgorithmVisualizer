@@ -104,10 +104,8 @@ void AGridManager::SpawnTiles(int32 Width, int32 Height)
 {
     GridTiles.Reserve(Width * Height);
 
-    for (int32 Y = 0; Y < Height; ++Y)
-    {
-        for (int32 X = 0; X < Width; ++X)
-        {
+    for (int32 Y = 0; Y < Height; ++Y) {
+        for (int32 X = 0; X < Width; ++X) {
             // 타일 위치 계산 (Y축 반전으로 화면 좌상단이 0,0)
             FVector SpawnLocation(X * TileSize, Y * TileSize, 0.f);
             FActorSpawnParameters Params;
@@ -116,8 +114,7 @@ void AGridManager::SpawnTiles(int32 Width, int32 Height)
             ATileActor* Tile = GetWorld()->SpawnActor<ATileActor>(
                 TileClass, SpawnLocation, FRotator::ZeroRotator, Params);
 
-            if (Tile)
-            {
+            if (Tile) {
                 Tile->GridX = X;
                 Tile->GridY = Y;
                 // 이름 설정 (디버깅용)
@@ -220,7 +217,6 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 
         Tile->SetPath(bDraw); // 경로 여부에 따라 밝기 머티리얼 값 조정
         Tile = Tile->PathParent;
-        if (bDraw && Tile) UE_LOG(LogTemp, Error, TEXT("next %d, %d"), Tile->GridX, Tile->GridY);
     }
 
     // 이전 메시 초기화
@@ -241,28 +237,24 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 
     int32 Last = PathPoints.Num() - 1;
 
-    for (int32 i = 0; i <= Last; i++)
-    {
+    for (int32 i = 0; i <= Last; i++) {
         FVector MiterRight;
 
-        if (i == 0)
-        {
+        if (i == 0) {
             // 시작점: 첫 번째 구간 방향만 사용
             FVector Dir = (PathPoints[1] - PathPoints[0]).GetSafeNormal();
             if (Dir.IsNearlyZero()) continue;
             MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
             if (MiterRight.IsNearlyZero()) MiterRight = FVector::RightVector;
         }
-        else if (i == Last)
-        {
+        else if (i == Last) {
             // 끝점: 마지막 구간 방향만 사용
             FVector Dir = (PathPoints[Last] - PathPoints[Last - 1]).GetSafeNormal();
             if (Dir.IsNearlyZero()) continue;
             MiterRight = FVector::CrossProduct(FVector::UpVector, Dir).GetSafeNormal();
             if (MiterRight.IsNearlyZero()) MiterRight = FVector::RightVector;
         }
-        else
-        {
+        else {
             // 중간 꺾임 지점: Miter 벡터 계산
             FVector DirA = (PathPoints[i] - PathPoints[i - 1]).GetSafeNormal();
             FVector DirB = (PathPoints[i + 1] - PathPoints[i]).GetSafeNormal();
@@ -290,15 +282,13 @@ void AGridManager::DrawPath(ATileActor* CurrentTile, bool bDraw)
 
     // 전체 경로 길이 먼저 계산 - 색상 변경에 사용
     float TotalLength = 0.f;
-    for (int32 i = 0; i < Last; i++)
-    {
+    for (int32 i = 0; i < Last; i++) {
         TotalLength += FVector::Dist(PathPoints[i], PathPoints[i + 1]);
     }
 
     // UV 설정 시 전체 길이로 나눠서 0~1 정규화
     float AccumLength = 0.f;
-    for (int32 i = 0; i < Last; i++)
-    {
+    for (int32 i = 0; i < Last; i++) {
         int32 Base = Vertices.Num();
 
         Vertices.Add(LeftPts[i]);       // v0

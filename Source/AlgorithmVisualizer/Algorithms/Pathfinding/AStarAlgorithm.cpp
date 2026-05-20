@@ -75,12 +75,9 @@ void FAStarAlgorithm::StepOnce()
 	for (int8 i = 0; i < DIRSIZE; i++) {
 		int32 nx = cx + dx[i];
 		int32 ny = cy + dy[i];
-		if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-		else {
-			ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 
-			// 장애물이면 다음 노드 탐색으로 넘어가기.
-			if (OpenTile->CurrentState == ETileState::Obstacle) continue;
+		if (IsWalkable(nx, ny)) {
+			ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 
 			// 목적지까지 거리
 			int32 rx = abs(ex - nx);
@@ -200,12 +197,9 @@ void FAStarAlgorithm::StepAll()
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
-			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-			else {
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
 
-				// 장애물이면 다음 노드 탐색으로 넘어가기.
-				if (OpenTile->CurrentState == ETileState::Obstacle) continue;
+			if (IsWalkable(nx, ny)) {
+				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 
 				// 목적지까지 거리
 				int32 rx = abs(ex - nx);

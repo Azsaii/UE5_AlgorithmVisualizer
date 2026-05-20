@@ -61,9 +61,9 @@ void FDFSAlgorithm::StepOnce()
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
-			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-			else {
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+
+			if (IsWalkable(nx, ny)) {
+				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurrentTile;
@@ -113,9 +113,9 @@ void FDFSAlgorithm::StepAll()
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
-			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-			else {
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+
+			if (IsWalkable(nx, ny)) {
+				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurrentTile;

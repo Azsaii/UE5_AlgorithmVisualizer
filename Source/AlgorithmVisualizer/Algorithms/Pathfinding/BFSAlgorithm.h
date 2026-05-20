@@ -2,13 +2,12 @@
 #include "BaseAlgorithm.h"
 #include "Containers/Queue.h"
 
-class AGridManager;
 class ATileActor;
 
 class FBFSAlgorithm : public FBaseAlgorithm
 {
 public:
-    FBFSAlgorithm(AGridManager* InGridManager) : GridManager(InGridManager){}
+    FBFSAlgorithm(AGridManager* InGridManager) { GridManager = InGridManager; }
 
     virtual bool CheckState() override;
     virtual void StepOnce() override;
@@ -16,6 +15,5 @@ public:
     virtual void ClearPath() override;
 
 private:
-    AGridManager* GridManager = nullptr;
     TQueue<ATileActor*> OpenQueue;
 };

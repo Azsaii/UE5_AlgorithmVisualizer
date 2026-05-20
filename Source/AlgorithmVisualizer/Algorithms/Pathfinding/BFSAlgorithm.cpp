@@ -63,10 +63,9 @@ void FBFSAlgorithm::StepOnce()
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
-			if(nx < 0 || nx >= width || ny < 0 || ny >= height){}
-			else {
-				UE_LOG(LogTemp, Error, TEXT("nx, ny: %d, %d"), nx, ny);
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+
+			if (IsWalkable(nx, ny)) {
+				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurrentTile;
@@ -78,17 +77,14 @@ void FBFSAlgorithm::StepOnce()
 					}
 					else OpenTile->CurrentState = ETileState::Open;
 				}
-				UE_LOG(LogTemp, Error, TEXT("test 1"));
 			}
 		}
-		UE_LOG(LogTemp, Error, TEXT("test 2"));
 		if (OpenQueue.IsEmpty()) {
 			bUnreachable = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
 			return;
 		}
 	}
-	UE_LOG(LogTemp, Error, TEXT("test 3"));
 }
 
 void FBFSAlgorithm::StepAll()
@@ -118,9 +114,9 @@ void FBFSAlgorithm::StepAll()
 		for (int8 i = 0; i < DIRSIZE; i++) {
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
-			if (nx < 0 || nx >= width || ny < 0 || ny >= height) {}
-			else {
-				ATileActor* OpenTile = GridManager->GetTile(nx, ny);
+
+			if (IsWalkable(nx, ny)) {
+				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
 				if (OpenTile->CurrentState == ETileState::Unvisited ||
 					OpenTile->CurrentState == ETileState::Goal) {
 					OpenTile->PathParent = CurrentTile;

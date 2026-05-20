@@ -3,7 +3,6 @@
 #include "Containers/Queue.h"
 #include "TileActor.h"
 
-class AGridManager;
 class ATileActor;
 
 enum FFindMethod
@@ -28,7 +27,8 @@ struct FTilePredicate
 class FAStarAlgorithm : public FBaseAlgorithm
 {
 public:
-    FAStarAlgorithm(AGridManager* InGridManager) : GridManager(InGridManager) {}
+    FAStarAlgorithm() = default;
+    FAStarAlgorithm(AGridManager* InGridManager) { GridManager = InGridManager; }
     
     virtual bool CheckState() override;
     virtual void StepOnce() override;
@@ -41,6 +41,5 @@ protected:
     static constexpr int STRAIGHT_DISTANCE = 10; // 직선 거리
     static constexpr int DIAGONAL_DISTANCE = 14; // 대각선 거리
 
-    AGridManager* GridManager = nullptr;
     TArray<ATileActor*> OpenQueue;
 };

@@ -287,7 +287,7 @@ void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
         break;
     }
     case EAlgorithmType::JPS: {
-
+        CurrentAlgorithm = MakeUnique<FJPSAlgorithm>(GridManager);
         break;
     }
 
