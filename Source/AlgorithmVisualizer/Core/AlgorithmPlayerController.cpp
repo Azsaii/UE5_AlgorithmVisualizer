@@ -40,6 +40,10 @@ void AAlgorithmPlayerController::BeginPlay()
 
             // 기본으로 BFS 선택
             ControlPanel->SelectAlgorithmBtn(ControlPanel->Btn_SwitchBFS);
+
+            // 기본으로 맨해튼 선택
+            ControlPanel->SelectDistanceMethodBtn(ControlPanel->Btn_DM_G_Manhattan);
+            ControlPanel->SelectDistanceMethodBtn(ControlPanel->Btn_DM_H_Manhattan);
         }, 0.1f, false);
     
     // UI가 Space 키 안먹게 하기
@@ -272,6 +276,7 @@ void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
 {
     Input_ClearPath();
 
+    CurrentAlgorithmType = Type;
     switch (Type)
     {
     case EAlgorithmType::BFS: {
@@ -307,5 +312,25 @@ void AAlgorithmPlayerController::SwitchAlgorithm(EAlgorithmType Type)
 
         break;
     }
+    }
+}
+
+void AAlgorithmPlayerController::SwitchDistanceMethod(bool G_IsManhattan, bool H_IsManhattan)
+{  
+    Input_ClearPath();
+
+    if (CurrentAlgorithmType == EAlgorithmType::ASTAR ||
+        CurrentAlgorithmType == EAlgorithmType::JPS) {
+
+        FAStarAlgorithm* algo = static_cast<FAStarAlgorithm*>(CurrentAlgorithm.Get());
+        if (G_IsManhattan == true) {
+            algo->G_FindMethod = MANHATTAN;
+        }
+        else algo->G_FindMethod = EUCLID;
+
+        if (H_IsManhattan == true) {
+            algo->H_FindMethod = MANHATTAN;
+        }
+        else algo->H_FindMethod = EUCLID;
     }
 }

@@ -20,6 +20,9 @@ public:
     // 맵 범위 벗어나는지, 장애물인지 체크. 둘 다 아니면 true
     bool IsWalkable(int32 X, int32 Y);
 
+    // 맵 범위 벗어나는지, 장애물인지, Closed 인지 체크. 셋 다 아니면 객체 리턴. 안맞으면 nullptr 리턴.
+    ATileActor* IsUpdatable(int32 X, int32 Y);
+
     // UU, UR, RR, DR, DD, LD, LL, UL
     int32 dx[DIRSIZE] = { 1, 1, 0, -1, -1, -1, 0, 1 };
     int32 dy[DIRSIZE] = { 0, 1, 1, 1, 0, -1, -1, -1 };

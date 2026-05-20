@@ -129,7 +129,8 @@ void FDFSAlgorithm::StepAll()
 		if (OpenStack.IsEmpty()) {
 			bUnreachable = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
-			return;
+			GridManager->DrawPath(CurrentTile, true); // 경로 그리기
+			break;
 		}
 	}
 

@@ -1,6 +1,7 @@
 #include "ControlPanelWidget.h"
 #include "Components/EditableTextBox.h"
 #include "Components/Button.h"
+#include "Components/Border.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
@@ -21,13 +22,40 @@ void UControlPanelWidget::NativeConstruct()
     Text_Status->SetText(FText::FromString(TEXT("Enter grid size and click Apply")));
 
     // 알고리즘 버튼 세팅
-    AlgorithmSwitchBtns = { Btn_SwitchBFS, Btn_SwitchDFS, Btn_SwitchAStar, Btn_SwitchJPS,
+    TArray<UButton*> AlgorithmSwitchBtns = { Btn_SwitchBFS, Btn_SwitchDFS, Btn_SwitchAStar, Btn_SwitchJPS,
         Btn_SwitchDijkstra, Btn_SwitchBellmanFord, Btn_SwitchKruskal, Btn_SwitchPrim };
 
     for (UButton* Btn : AlgorithmSwitchBtns) {
-        Btn->OnClicked.AddDynamic(this, &UControlPanelWidget::OnAnyButtonClicked);
-        AddAlgorithmButton(Btn);
+        Btn->OnClicked.AddDynamic(this, &UControlPanelWidget::OnAnyAlgorithmButtonClicked);
+        AddButtonToArray(FAlgorithmBtns, Btn);
     }
+
+    SelectedAlgorithmBtn = Btn_SwitchBFS;
+
+    // 거리 측정 버튼 세팅
+    TArray<UButton*> DistanceMethodBtns = {
+        Btn_DM_G_Manhattan, Btn_DM_G_Euclidean, Btn_DM_H_Manhattan, Btn_DM_H_Euclidean };
+
+    for (UButton* Btn : DistanceMethodBtns) {
+        Btn->OnClicked.AddDynamic(this, &UControlPanelWidget::OnAnyDistanceMethodButtonClicked);
+        AddButtonToArray(FDistanceMethodBtns, Btn);
+    }
+
+    SelectedG_DMBtn = Btn_DM_G_Manhattan;
+    SelectedH_DMBtn = Btn_DM_H_Manhattan;
+}
+
+void UControlPanelWidget::NativeDestruct()
+{
+    // 플레이 종료 시 모든 버튼 스타일 복구.
+    for (FSelectBtn& Btn : FAlgorithmBtns) {
+        if (Btn.Button) Btn.Button->SetStyle(Btn.DefaultStyle);
+    }
+    for (FSelectBtn& Btn : FDistanceMethodBtns) {
+        if (Btn.Button) Btn.Button->SetStyle(Btn.DefaultStyle);
+    }
+
+    Super::NativeDestruct();
 }
 
 void UControlPanelWidget::OnTileSetClicked()
@@ -75,9 +103,9 @@ void UControlPanelWidget::UpdateStatusText(const FString& Message)
 }
 
 // 눌린 버튼을 호버로 판별
-void UControlPanelWidget::OnAnyButtonClicked()
+void UControlPanelWidget::OnAnyAlgorithmButtonClicked()
 {
-    for (FAlgorithmBtn& Btn : FAlgorithmBtns) {
+    for (FSelectBtn& Btn : FAlgorithmBtns) {
         if (Btn.Button->IsHovered()) {
             SelectAlgorithmBtn(Btn.Button);
             return;
@@ -85,24 +113,37 @@ void UControlPanelWidget::OnAnyButtonClicked()
     }
 }
 
+void UControlPanelWidget::OnAnyDistanceMethodButtonClicked()
+{
+    for (FSelectBtn& Btn : FDistanceMethodBtns) {
+        if (Btn.Button->IsHovered()) {
+            SelectDistanceMethodBtn(Btn.Button);
+            return;
+        }
+    }
+}
+
 void UControlPanelWidget::SelectAlgorithmBtn(UButton* InButton)
 {
-    FAlgorithmBtn prevSelectedBtn;
-    FAlgorithmBtn curSelectedBtn;
+    FSelectBtn prevSelectedBtn(nullptr);
+    FSelectBtn curSelectedBtn(nullptr);
 
-    for (FAlgorithmBtn& FBtn : FAlgorithmBtns) {
+    for (FSelectBtn& FBtn : FAlgorithmBtns) {
         if (FBtn.Button == SelectedAlgorithmBtn) prevSelectedBtn = FBtn;
         if (FBtn.Button == InButton) curSelectedBtn = FBtn;
     }
 
-
-    if (SelectedAlgorithmBtn) {
+    // 이전 선택되었던 버튼 스타일 복구
+    if (prevSelectedBtn.Button) {
         prevSelectedBtn.Button->SetStyle(prevSelectedBtn.DefaultStyle);
     }
 
+    // 거리 측정 방법 메뉴 일단 숨기기. A* or JPS 면 아래에서 보이게 함
+    SetVisibilityDistanceMethodPanel(ESlateVisibility::Hidden);
+
+    // 선택된 버튼 스타일 변경
     SelectedAlgorithmBtn = InButton;
     SelectedAlgorithmBtn->SetStyle(curSelectedBtn.SelectedStyle);
-
 
     if (InButton == Btn_SwitchBFS) {
         ALPC->SwitchAlgorithm(EAlgorithmType::BFS);
@@ -112,9 +153,13 @@ void UControlPanelWidget::SelectAlgorithmBtn(UButton* InButton)
     }
     else if (InButton == Btn_SwitchAStar) {
         ALPC->SwitchAlgorithm(EAlgorithmType::ASTAR);
+        SetVisibilityDistanceMethodPanel(ESlateVisibility::Visible);
+        ALPC->SwitchDistanceMethod(G_IsManhattan, H_IsManhattan);
     }
     else if (InButton == Btn_SwitchJPS) {
         ALPC->SwitchAlgorithm(EAlgorithmType::JPS);
+        SetVisibilityDistanceMethodPanel(ESlateVisibility::Visible);
+        ALPC->SwitchDistanceMethod(G_IsManhattan, H_IsManhattan);
     }
     else if (InButton == Btn_SwitchDijkstra) {
         ALPC->SwitchAlgorithm(EAlgorithmType::DIJKSTRA);
@@ -130,27 +175,85 @@ void UControlPanelWidget::SelectAlgorithmBtn(UButton* InButton)
     }
 }
 
-void UControlPanelWidget::AddAlgorithmButton(UButton* btn)
+void UControlPanelWidget::SelectDistanceMethodBtn(UButton* InButton)
 {
-    FAlgorithmBtn& Data = FAlgorithmBtns.AddDefaulted_GetRef();
+    FSelectBtn prevSelectedBtn(nullptr);
+    FSelectBtn curSelectedBtn(nullptr);
+
+    if (InButton == Btn_DM_G_Manhattan || InButton == Btn_DM_G_Euclidean) {
+        for (FSelectBtn& btn : FDistanceMethodBtns) {
+            if (btn.Button == SelectedG_DMBtn) prevSelectedBtn = btn;
+            if (btn.Button == InButton) curSelectedBtn = btn;
+        }
+
+        SelectedG_DMBtn = InButton;
+    }
+    else {
+        for (FSelectBtn& btn : FDistanceMethodBtns) {
+            if (btn.Button == SelectedH_DMBtn) prevSelectedBtn = btn;
+            if (btn.Button == InButton) curSelectedBtn = btn;
+        }
+
+        SelectedH_DMBtn = InButton;
+    }
+
+    // 이전 선택되었던 버튼 스타일 복구
+    if (prevSelectedBtn.Button) {
+        prevSelectedBtn.Button->SetStyle(prevSelectedBtn.DefaultStyle);
+    }
+
+    // 선택된 버튼 스타일 변경
+    InButton->SetStyle(curSelectedBtn.SelectedStyle);
+
+    if (InButton == Btn_DM_G_Manhattan) {
+        G_IsManhattan = true;
+    }
+    else if (InButton == Btn_DM_G_Euclidean) {
+        G_IsManhattan = false;
+    }
+    else if (InButton == Btn_DM_H_Manhattan) {
+        H_IsManhattan = true;
+    }
+    else if (InButton == Btn_DM_H_Euclidean) {
+        H_IsManhattan = false;
+    }
+    ALPC->SwitchDistanceMethod(G_IsManhattan, H_IsManhattan);
+}
+
+FSlateColor UControlPanelWidget::GetDarkColor(FSlateColor Color)
+{
+    FLinearColor HSV = Color.GetSpecifiedColor().LinearRGBToHSV();
+
+    // 밝기(Value) 강하게 감소
+    HSV.B = FMath::Clamp(HSV.B * 0.35f, 0.f, 1.f);
+
+    // 채도 약간 증가하면 더 진하게 보임
+    HSV.G = FMath::Clamp(HSV.G * 1.2f, 0.f, 1.f);
+
+    return FSlateColor(HSV.HSVToLinearRGB());
+}
+
+void UControlPanelWidget::AddButtonToArray(TArray<FSelectBtn>& BtnArray, UButton* btn)
+{
+    FSelectBtn& Data = BtnArray.AddDefaulted_GetRef();
 
     Data.Button = btn;
     Data.DefaultStyle = btn->GetStyle();
     Data.SelectedStyle = Data.DefaultStyle;
 
-    auto Darken = [](FSlateColor Color)
-        {
-            FLinearColor HSV =
-                Color.GetSpecifiedColor().LinearRGBToHSV();
+    Data.SelectedStyle.Normal.TintColor = GetDarkColor(Data.SelectedStyle.Normal.TintColor);
+    Data.SelectedStyle.Hovered.TintColor = GetDarkColor(Data.DefaultStyle.Hovered.TintColor);
+    Data.SelectedStyle.Pressed.TintColor = GetDarkColor(Data.DefaultStyle.Pressed.TintColor);
+}
 
-            // 밝기(Value) 강하게 감소
-            HSV.B = FMath::Clamp(HSV.B * 0.35f, 0.f, 1.f);
-
-            // 채도 약간 증가하면 더 진하게 보임
-            HSV.G = FMath::Clamp(HSV.G * 1.2f, 0.f, 1.f);
-
-            return FSlateColor(HSV.HSVToLinearRGB());
-        };
-
-    Data.SelectedStyle.Normal.TintColor = Darken(Data.SelectedStyle.Normal.TintColor);
+void UControlPanelWidget::SetVisibilityDistanceMethodPanel(ESlateVisibility InVisibility)
+{
+    Border_DistanceMethod->SetVisibility(InVisibility);
+    TextBlock_DM->SetVisibility(InVisibility);
+    TextBlock_G->SetVisibility(InVisibility);
+    TextBlock_H->SetVisibility(InVisibility);
+    Btn_DM_G_Manhattan->SetVisibility(InVisibility);
+    Btn_DM_G_Euclidean->SetVisibility(InVisibility);
+    Btn_DM_H_Manhattan->SetVisibility(InVisibility);
+    Btn_DM_H_Euclidean->SetVisibility(InVisibility);
 }

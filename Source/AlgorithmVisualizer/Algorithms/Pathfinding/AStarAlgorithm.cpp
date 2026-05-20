@@ -31,9 +31,10 @@ void FAStarAlgorithm::StepOnce()
 		int32 distx = abs(GridManager->EndTile->GridX - GridManager->StartTile->GridX);
 		int32 disty = abs(GridManager->EndTile->GridY - GridManager->StartTile->GridY);
 		int32 remain = (distx + disty) * STRAIGHT_DISTANCE;
-		if(FindMethod == EUCLID) remain = sqrt(distx * distx + disty * disty)* STRAIGHT_DISTANCE;
-		GridManager->StartTile->OpenNode.UpdateOpenNode(
-			true, 0, remain);
+		if(H_FindMethod == EUCLID) {
+			remain = static_cast<int32>(sqrt(distx * distx + disty * disty) * STRAIGHT_DISTANCE);
+		}
+		GridManager->StartTile->OpenNode.UpdateOpenNode(true, 0, remain);
 		OpenQueue.HeapPush(GridManager->StartTile, FTilePredicate());
 	}
 
@@ -70,14 +71,16 @@ void FAStarAlgorithm::StepOnce()
 
 	FString Msg = FString::Printf(TEXT("Open point (%d, %d)"), cx, cy);
 	GridManager->ControlPanel->UpdateStatusText(Msg);
+	UE_LOG(LogTemp, Error, TEXT("Open %d, %d / g: %d, h: %d, f: %d"), cx, cy,
+		CurrentTile->OpenNode.MoveCount, CurrentTile->OpenNode.RemainDistance, CurrentTile->OpenNode.Weight);
 
 	// 인접 노드 탐색
 	for (int8 i = 0; i < DIRSIZE; i++) {
 		int32 nx = cx + dx[i];
 		int32 ny = cy + dy[i];
 
-		if (IsWalkable(nx, ny)) {
-			ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
+		ATileActor* OpenTile = IsUpdatable(nx, ny);
+		if (OpenTile) {
 
 			// 목적지까지 거리
 			int32 rx = abs(ex - nx);
@@ -87,22 +90,21 @@ void FAStarAlgorithm::StepOnce()
 			int32 nextMoveCount = STRAIGHT_DISTANCE;
 			int32 nextRemainDistance = (rx + ry) * STRAIGHT_DISTANCE;
 
+			// 남은 거리 계산
+			if (H_FindMethod == EUCLID) {
+				double tmp = sqrt(rx * rx + ry * ry) * STRAIGHT_DISTANCE;
+				nextRemainDistance = static_cast<int32>(tmp);
+			}
+
 			// i가 홀수면 대각선.
 			// 거리 계산시 MANHATTAN 은 2칸으로, EUCLID는 1.4칸으로 계산.
 			// 목적지 까지 거리 계산 시 EUCLID는 피타고라스 정리로 계산.
 			if (i & 1) {
-				switch (FindMethod) {
-				case MANHATTAN: {
+				// 이동 거리 계산
+				if (G_FindMethod == MANHATTAN) {
 					nextMoveCount = STRAIGHT_DISTANCE * 2;
-					break;
 				}
-				case EUCLID: {
-					nextMoveCount = DIAGONAL_DISTANCE;
-					double tmp = sqrt(rx * rx + ry * ry) * STRAIGHT_DISTANCE;
-					nextRemainDistance = static_cast<int32>(tmp);
-					break;
-				}
-				}
+				else nextMoveCount = DIAGONAL_DISTANCE;	
 			}
 			nextMoveCount += CurrentTile->OpenNode.MoveCount;
 
@@ -110,7 +112,8 @@ void FAStarAlgorithm::StepOnce()
 			bool check = false;
 
 			// 1) 첫 탐색: 오픈 리스트에 넣는다.
-			if (OpenTile->OpenNode.bVisited == false) {
+			if (OpenTile->OpenNode.IsVisited == false) {
+				OpenTile->OpenNode.IsVisited = true;
 				check = true;
 			}
 			// 2) 재 탐색: 가중치 비교해서 이번 경로가 더 좋으면 업데이트한다.
@@ -162,9 +165,10 @@ void FAStarAlgorithm::StepAll()
 		int32 distx = abs(GridManager->EndTile->GridX - GridManager->StartTile->GridX);
 		int32 disty = abs(GridManager->EndTile->GridY - GridManager->StartTile->GridY);
 		int32 remain = (distx + disty) * STRAIGHT_DISTANCE;
-		if (FindMethod == EUCLID) remain = sqrt(distx * distx + disty * disty) * STRAIGHT_DISTANCE;
-		GridManager->StartTile->OpenNode.UpdateOpenNode(
-			true, 0, remain);
+		if (H_FindMethod == EUCLID) {
+			remain = static_cast<int32>(sqrt(distx * distx + disty * disty) * STRAIGHT_DISTANCE);
+		}
+		GridManager->StartTile->OpenNode.UpdateOpenNode(true, 0, remain);
 		OpenQueue.HeapPush(GridManager->StartTile, FTilePredicate());
 	}
 
@@ -198,8 +202,8 @@ void FAStarAlgorithm::StepAll()
 			int32 nx = cx + dx[i];
 			int32 ny = cy + dy[i];
 
-			if (IsWalkable(nx, ny)) {
-				ATileActor* OpenTile = GridManager->GridTiles[nx + ny * width];
+			ATileActor* OpenTile = IsUpdatable(nx, ny);
+			if (OpenTile) {
 
 				// 목적지까지 거리
 				int32 rx = abs(ex - nx);
@@ -209,34 +213,33 @@ void FAStarAlgorithm::StepAll()
 				int32 nextMoveCount = STRAIGHT_DISTANCE;
 				int32 nextRemainDistance = (rx + ry) * STRAIGHT_DISTANCE;
 
+				// 남은 거리 계산
+				if (H_FindMethod == EUCLID) {
+					double tmp = sqrt(rx * rx + ry * ry) * STRAIGHT_DISTANCE;
+					nextRemainDistance = static_cast<int32>(tmp);
+				}
+
 				// i가 홀수면 대각선.
 				// 거리 계산시 MANHATTAN 은 2칸으로, EUCLID는 1.4칸으로 계산.
 				// 목적지 까지 거리 계산 시 EUCLID는 피타고라스 정리로 계산.
 				if (i & 1) {
-					switch (FindMethod) {
-					case MANHATTAN: {
+					// 이동 거리 계산
+					if (G_FindMethod == MANHATTAN) {
 						nextMoveCount = STRAIGHT_DISTANCE * 2;
-						break;
 					}
-					case EUCLID: {
-						nextMoveCount = DIAGONAL_DISTANCE;
-						double tmp = sqrt(rx * rx + ry * ry) * STRAIGHT_DISTANCE;
-						nextRemainDistance = static_cast<int32>(tmp);
-						break;
-					}
-					}
+					else nextMoveCount = DIAGONAL_DISTANCE;
 				}
 				nextMoveCount += CurrentTile->OpenNode.MoveCount;
 
-				int32 nextWeight = nextMoveCount + nextRemainDistance;
 				bool check = false;
 
 				// 1) 첫 탐색: 시 오픈 리스트에 넣는다.
-				if (OpenTile->OpenNode.bVisited == false) {
+				if (OpenTile->OpenNode.IsVisited == false) {
+					OpenTile->OpenNode.IsVisited = true;
 					check = true;
 				}
 				// 2) 재 탐색: 가중치 비교해서 이번 경로가 더 좋으면 업데이트한다.
-				else if (OpenTile->OpenNode.Weight > nextWeight) {
+				else if (OpenTile->OpenNode.MoveCount > nextMoveCount) {
 					
 					// 오픈 리스트에서 제거
 					int32 idx = OpenQueue.Find(OpenTile);
@@ -270,7 +273,8 @@ void FAStarAlgorithm::StepAll()
 		if (OpenQueue.IsEmpty()) {
 			bUnreachable = true;
 			GridManager->ControlPanel->UpdateStatusText(TEXT("Target Unreachable"));
-			return;
+			GridManager->DrawPath(CurrentTile, true); // 경로 그리기
+			break;
 		}
 	}
 

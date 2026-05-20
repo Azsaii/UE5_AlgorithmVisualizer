@@ -35,7 +35,8 @@ public:
     virtual void StepAll() override;
     virtual void ClearPath() override;
 
-    FFindMethod FindMethod = MANHATTAN;
+    FFindMethod G_FindMethod = MANHATTAN; // 이동한 거리
+    FFindMethod H_FindMethod = MANHATTAN; // 남은 거리
 
 protected:
     static constexpr int STRAIGHT_DISTANCE = 10; // 직선 거리

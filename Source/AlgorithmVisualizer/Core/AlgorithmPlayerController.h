@@ -44,6 +44,9 @@ public:
     // 알고리즘 변경 - ui에서 호출
     void SwitchAlgorithm(EAlgorithmType Type);
 
+    // 거리 측정 방식 변경 - ui에서 호출
+    void SwitchDistanceMethod(bool G_IsManhattan, bool H_IsManhattan);
+
     // ui에서 호출됨
     void Input_ClearPath();
 
@@ -109,4 +112,7 @@ private:
     ATileActor* GetTileUnderCursor();
 
     TUniquePtr<FBaseAlgorithm> CurrentAlgorithm;
+
+    // 거리측정 방식 바꿀 때 지금 A*, JPS인지 판별 시 사용함.
+    EAlgorithmType CurrentAlgorithmType = EAlgorithmType::BFS;
 };
