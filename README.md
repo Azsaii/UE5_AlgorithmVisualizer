@@ -62,8 +62,8 @@
 
 > *(추후 GIF 또는 스크린샷 더 추가 예정)*
 
-<img width="1277" height="691" alt="1" src="https://github.com/user-attachments/assets/f4387e17-74a8-4cb8-9aeb-c91e4d13b882" />
-<img width="2554" height="1387" alt="2" src="https://github.com/user-attachments/assets/1bb2d8b0-d657-4052-bcf1-a40874c8f9cd" />
+<img width="2557" height="1388" alt="1" src="https://github.com/user-attachments/assets/fce73ce1-b2ec-4dfe-909f-6235bea2fcae" />
+<img width="2557" height="1392" alt="2" src="https://github.com/user-attachments/assets/0f3128ea-06e9-4507-8c06-286b31d90067" />
 
  
 ---
